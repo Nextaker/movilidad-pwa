@@ -3,20 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Garaje & Movilidad - Punto Fijo</title>
+    <title>Overdrive</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     
     <!-- Estilos exactos HUD -->
     <link rel="stylesheet" href="style.css">
+
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
-
+<div id="orientation-warning" class="orientation-overlay">
+    <div class="warning-content">
+        <button class="close-warning-btn" id="btn-close-warning">✕ Continuar en Vertical</button>
+        <div class="phone-rotate-icon">📱🔄</div>
+        <h2>Mejor en Horizontal</h2>
+        <p>Para disfrutar del HUD 3D y el garaje al máximo, te sugerimos girar tu dispositivo.</p>
+    </div>
+</div>
     <!-- VISTA 1: EL GARAJE HUD (DASHBOARD) -->
     <div id="garage-view" class="garage-container">
         
-        <!-- HUD Superior Holográfico Replicado -->
+        <!-- HUD Superior Holográfico Limpio (Sin botón de edición) -->
         <header class="hud-header">
             <div class="hud-left">
                 <div class="hud-avatar-container">
@@ -36,7 +45,7 @@
                     <div class="hud-metrics-row">
                         <div class="metric-item">
                             <span>LEVEL</span>
-                            <strong>#1 GT</strong>
+                            <strong>#1</strong>
                         </div>
                         <div class="divider-vertical"></div>
                         <div class="metric-item">
@@ -51,28 +60,22 @@
                     </div>
                 </div>
             </div>
-
-            <div class="hud-right">
-                <button class="btn-hud-action" id="btn-open-modal">⚙️ Cambiar Vehículo</button>
-            </div>
         </header>
 
         <!-- PÓSTER INTERACTIVO EN LA PARED DEL GARAJE -->
-    <div class="wall-poster-sponsor" id="btn-open-ads">
-    <span>Patrocinador Local</span>
-    <h4>🛞 Paraguaná Tires</h4>
-    <p>Ofertas en neumáticos y lubricantes en Punto Fijo. Haz clic aquí.</p>
-    </div>
+        <div class="wall-poster-sponsor" id="btn-open-ads">
+            <span>Patrocinador Local</span>
+            <h4>🛞 Paraguaná Tires</h4>
+            <p>Ofertas en neumáticos y lubricantes en Punto Fijo. Haz clic aquí.</p>
+        </div>
 
-        <!-- ESCENARIO CENTRAL: Vehículo PNG recortado (Transparente sobre el piso) -->
+        <!-- ESCENARIO CENTRAL: Vehículo y Control de Rotación -->
         <div class="garage-stage">
-            <div class="car-display-wrapper">
-                <!-- PNG Transparente de automóvil para apoyarse real en el suelo del garaje -->
-                <img src="https://purepng.com/public/uploads/large/purepng.com-fiat-carcarautomobilevehiclefiat-961524660309o1b0c.png" 
-                     alt="Mi Vehículo" 
-                     class="car-image-cutout" 
-                     id="user-car-img">
-            </div>
+
+            <!-- Botón flotante para Rotar Ángulo del Vehículo -->
+            <button class="rotate-btn" id="btn-rotate-view" title="Cambiar perspectiva">
+                🔄 Rotar Vista
+            </button>
         </div>
 
         <!-- HUD INFERIOR Y BOTONES DE NAVEGACIÓN -->
@@ -80,6 +83,7 @@
             <div class="hud-buttons-row">
                 <button class="neon-btn primary" id="btn-open-map">🗺️ Ver Mapa de Bombas</button>
                 <button class="neon-btn" id="btn-open-favorites">⭐ Mis Favoritos</button>
+                <button class="neon-btn" id="btn-open-modal">⚙️ Cambiar Vehículo</button>
                 <button class="neon-btn" id="btn-open-ads">📢 Patrocinantes</button>
             </div>
             
@@ -96,29 +100,42 @@
         <button class="neon-btn back-to-garage" id="btn-back-garage">⬅️ Volver al Garaje</button>
         <div id="map" style="height: 100%; width: 100%;"></div>
     </div>
+    <!-- MODAL SELECTOR DE VEHÍCULO (CATÁLOGO PROFESIONAL) -->
+<div id="car-modal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Configuración del Garaje</h3>
+        
+        <div class="form-group">
+            <label for="select-car-model">Seleccionar Vehículo del Catálogo</label>
+            <select id="select-car-model" class="custom-select">
+                <option value="fiat_palio">Fiat Palio 1.8 (1.8 L)</option>
+                <option value="chevrolet_aveo">Chevrolet Aveo Speed (1.5 L)</option>
+                <option value="toyota_corolla">Toyota Corolla (1.8 L)</option>
+                <option value="chevrolet_optra">Chevrolet Optra Limited (1.8 L)</option>
+            </select>
+        </div>
 
-    <!-- MODAL SELECTOR DE VEHÍCULO -->
-    <div id="car-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h3>Configuración del Garaje</h3>
-            <div class="form-group">
-                <label for="input-car-name">Modelo de Vehículo</label>
-                <input type="text" id="input-car-name" value="Fiat Palio 1.8">
-            </div>
-            <div class="form-group">
-                <label for="input-car-img">URL Imagen PNG (sin fondo)</label>
-                <input type="text" id="input-car-img" value="https://purepng.com/public/uploads/large/purepng.com-fiat-carcarautomobilevehiclefiat-961524660309o1b0c.png">
-            </div>
-            <div class="modal-actions">
-                <button class="neon-btn primary" id="btn-save-car">Guardar Cambios</button>
-                <button class="neon-btn" id="btn-close-modal">Cancelar</button>
+        <!-- SELECTOR DE COLOR / ACABADO -->
+        <div class="form-group" style="margin-top: 15px;">
+            <label>Acabado / Color del Vehículo</label>
+            <div class="color-selector-row" style="display: flex; gap: 12px; margin-top: 8px;">
+                <button type="button" class="color-btn" data-color="rojo" style="background: #ff2a2a; width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; box-shadow: 0 0 10px rgba(255,42,42,0.5);" title="Rojo"></button>
+                <button type="button" class="color-btn" data-color="negro" style="background: #111111; width: 35px; height: 35px; border-radius: 50%; border: 2px solid #00f0ff; cursor: pointer; box-shadow: 0 0 10px rgba(0,240,255,0.5);" title="Negro"></button>
+                <button type="button" class="color-btn" data-color="gris" style="background: #aaaaaa; width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; box-shadow: 0 0 10px rgba(170,170,170,0.5);" title="Gris / Plateado"></button>
             </div>
         </div>
-    </div>
 
-    <!-- Leaflet JS & Supabase -->
+        <div class="modal-actions" style="margin-top: 20px;">
+            <button class="neon-btn primary" id="btn-save-car">Guardar Cambios</button>
+            <button class="neon-btn" id="btn-close-modal">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+    <!-- Leaflet JS & Supabase CDN -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="js/main.js"></script>
+    <!-- Librería para renderizado y control 3D interactivo -->
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 </body>
 </html>

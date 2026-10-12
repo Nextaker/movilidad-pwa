@@ -19,10 +19,9 @@ body {
     position: relative;
     width: 100vw;
     height: 100vh;
-    background: 
-        radial-gradient(circle at 50% 20%, rgba(0, 243, 255, 0.08) 0%, transparent 65%),
-        linear-gradient(180deg, rgba(5, 8, 17, 0.2) 0%, rgba(5, 8, 17, 0.7) 100%),
-        url('assets/garaje-fondo.jpg.jpg') no-repeat center center/cover;
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -53,7 +52,7 @@ body {
     box-shadow: 
         0 0 35px rgba(0, 243, 255, 0.2), 
         inset 0 0 15px rgba(0, 243, 255, 0.1);
-    width: 95%;
+    width: 75%;
     margin: 0 10pc; /* Tu margen personalizado */
 
     /* Tu inclinación fija ajustada */
@@ -167,25 +166,23 @@ body {
 }
 
 /* 3. PÓSTER INTERACTIVO EN LA PARED DEL GARAJE (PATROCINADOR) */
+/* Posición optimizada para PC / Escritorio */
 .wall-poster-sponsor {
     position: absolute;
-    top: 38%;
-    left: 7%;
-    width: 230px;
+    top: 35%;
+    left: 10%; /* Ajustado ligeramente hacia adentro para que encaje mejor con la pared */
+    width: 210px;
     background: rgba(10, 16, 26, 0.85);
     border: 1.5px solid #00f3ff;
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 10px;
+    padding: 14px;
     box-shadow: 0 0 25px rgba(0, 243, 255, 0.3);
     backdrop-filter: blur(10px);
     cursor: pointer;
-    
-    /* Inclinación sutil para acoplarse a la pared de ladrillo */
-    transform: perspective(1000px) rotateY(18deg) rotateX(2deg);
+    transform: perspective(1000px) rotateY(16deg) rotateX(1deg);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     z-index: 5;
 }
-
 .wall-poster-sponsor:hover {
     transform: perspective(1000px) rotateY(10deg) scale(1.05);
     box-shadow: 0 0 40px rgba(0, 243, 255, 0.6);
@@ -213,9 +210,22 @@ body {
     line-height: 1.2;
 }
 
-/* 4. ESCENARIO CENTRAL (DESACTIVADO TEMPORALMENTE) */
+/* --- ESCENARIO 3D INTERACTIVO --- */
 .garage-stage {
-    display: none; /* Oculto temporalmente para enfocarnos en la interfaz base y fondo */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -45%);
+    width: 100%;
+    max-width: 900px;
+    height: 400px;
+    z-index: 4;
+}
+
+model-viewer {
+    width: 100%;
+    height: 100%;
+    --poster-color: transparent;
 }
 
 /* 5. HUD INFERIOR Y BOTONES FLOTANTES NEON */
@@ -232,31 +242,44 @@ body {
     justify-content: center;
     gap: 20px;
 }
-
+/* --- DISEÑO DE BOTONES INDUSTRIALES Y COMPACTOS --- */
 .neon-btn {
-    background: rgba(10, 16, 26, 0.7);
+    position: relative;
+    background: rgba(10, 16, 26, 0.85);
     border: 1px solid rgba(0, 243, 255, 0.5);
     color: #00f3ff;
-    padding: 12px 28px;
-    border-radius: 10px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 0.85rem;
     font-weight: 600;
-    font-size: 0.9rem;
     letter-spacing: 0.8px;
     cursor: pointer;
-    transition: all 0.25s ease;
-    box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
+    box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.15), 0 0 15px rgba(0, 243, 255, 0.1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .neon-btn:hover {
-    background: #00f3ff;
-    color: #050811;
-    box-shadow: 0 0 25px rgba(0, 243, 255, 0.8);
+    background: rgba(0, 243, 255, 0.15);
+    border-color: #00f3ff;
+    color: #ffffff;
+    box-shadow: inset 0 0 15px rgba(0, 243, 255, 0.3), 0 0 25px rgba(0, 243, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+.neon-btn:active {
+    transform: translateY(0);
 }
 
 .neon-btn.primary {
-    background: rgba(0, 243, 255, 0.15);
+    background: linear-gradient(135deg, rgba(0, 243, 255, 0.2), rgba(10, 16, 26, 0.9));
     border-color: #00f3ff;
+    color: #ffffff;
 }
 
 /* PANEL FLOTANTE DE FAVORITOS */
@@ -365,3 +388,486 @@ body {
 }
 .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
 .modal-actions button { flex: 1; }
+
+/* --- BOTÓN DE ROTACIÓN DE VISTA Y MODO SHOWROOM --- */
+.garage-stage {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.car-display-wrapper {
+    perspective: 1000px;
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+
+.rotate-btn {
+    display: none;
+    position: absolute;
+    bottom: 20px;
+    right: 15%;
+    background: rgba(10, 16, 26, 0.75);
+    border: 1px solid rgba(0, 243, 255, 0.5);
+    color: #00f3ff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.rotate-btn:hover {
+    background: rgba(0, 243, 255, 0.2);
+    box-shadow: 0 0 25px rgba(0, 243, 255, 0.6);
+    transform: translateY(-2px);
+}
+
+/* --- SELECTOR PERSONALIZADO DEL MODAL --- */
+.custom-select {
+    width: 100%;
+    padding: 12px;
+    background: rgba(5, 8, 17, 0.9);
+    border: 1px solid rgba(0, 243, 255, 0.4);
+    border-radius: 8px;
+    color: #e6edf3;
+    font-size: 1rem;
+    outline: none;
+    margin-top: 8px;
+    transition: border-color 0.3s ease;
+}
+
+.custom-select:focus {
+    border-color: #00f3ff;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+}
+
+.custom-select option {
+    background: #050811;
+    color: #e6edf3;
+}
+
+/* ==========================================
+   ADAPTACIÓN RESPONSIVA OPTIMIZADA (MÓVILES)
+   ========================================== */
+
+@media screen and (max-width: 900px) and (orientation: landscape) {
+
+    body {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto; /* Permite hacer scroll vertical si es necesario */
+    }
+    /* 1. Ajuste del Fondo del Garaje (Escala completa sin zoom desproporcionado) */
+    .garage-container {
+        padding: 12px 12px 10px 12px;
+        justify-content: space-between;
+        background-color: #050811; /* Color base oscuro por si la imagen no cubre los bordes */
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: cover; /* Permite que cubra toda la pantalla vertical sin deformarse */
+        height: auto;
+        min-height: 100vh;
+        padding-bottom: 30px; /* Espacio extra al fondo para que los botones del footer respiren */
+    }
+
+    /* 2. HUD Superior Responsivo (Ligero y legible) */
+    .hud-header {
+        width: 86%;
+        margin: 0 auto;
+        padding: 10px 12px;
+        border-radius: 12px;
+        transform: perspective(600px) rotateY(20deg) rotateZ(3deg); /* Inclinación sutil en móvil */
+        box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+    }
+
+    /* Asegurar que el footer y los botones siempre sean visibles y no queden fuera */
+    .hud-footer-container {
+        position: relative;
+        margin-top: 20px;
+    }
+
+    .hud-avatar {
+        width: 45px;
+        height: 45px;
+    }
+
+    .hud-top-line {
+        font-size: 0.8rem;
+    }
+
+    .hud-metrics-row {
+        gap: 10px;
+    }
+
+    .metric-item span {
+        font-size: 0.55rem;
+    }
+
+    .metric-item strong {
+        font-size: 0.85rem;
+    }
+
+    .divider-vertical {
+        height: 18px;
+    }
+
+    /* 3. Cartel del Patrocinador PEAGADO A LA PARED IZQUIERDA */
+
+.wall-poster-sponsor {
+    position: absolute;
+    top: 30%;
+    left: 8%; /* Ajustado ligeramente hacia adentro para que encaje mejor con la pared */
+    width: 110px;
+    background: rgba(10, 16, 26, 0.85);
+    border: 1.5px solid #00f3ff;
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 0 25px rgba(0, 243, 255, 0.3);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    transform: perspective(1000px) rotateY(29deg) rotateX(1deg);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    z-index: 5;
+}
+
+    .wall-poster-sponsor h4 {
+        font-size: 0.45rem;
+    }
+
+    .wall-poster-sponsor p {
+        font-size: 0.5rem;
+        line-height: 1.1;
+    }
+
+    /* 4. Escenario y Vehículo */
+    .garage-stage {
+        height: 180px; /* Define altura fija para evitar colapsos */
+    }
+
+    .car-image-cutout {
+        max-width: 240px;
+        max-height: 140px;
+        object-fit: contain;
+    }
+
+    .rotate-btn {
+        bottom: 0px;
+        right: 5%;
+        font-size: 0.7rem;
+        padding: 5px 10px;
+    }
+
+    /* 5. Botones del Footer en Cuadrícula */
+    .hud-buttons-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        width: 80%;
+    }
+
+    .neon-btn {
+        padding: 8px 6px;
+        font-size: 0.72rem;
+    }
+
+    .ads-banner {
+        display: none;
+    }
+}
+
+/* --- OVERLAY DE ALERTA DE ORIENTACIÓN --- */
+.orientation-overlay {
+    display: none; /* Por defecto oculto */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(5, 8, 17, 0.95);
+    backdrop-filter: blur(15px);
+    z-index: 99999;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+}
+
+.warning-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    border: 1.5px solid rgba(0, 243, 255, 0.6);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 0 30px rgba(0, 243, 255, 0.3);
+    max-width: 320px;
+}
+
+.phone-rotate-icon {
+    font-size: 3rem;
+    animation: rotatePhone 2s infinite ease-in-out;
+}
+
+.orientation-overlay h2 {
+    color: #00f3ff;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+}
+
+.orientation-overlay p {
+    color: #8b949e;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+@keyframes rotatePhone {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(-90deg); }
+}
+
+/* Mostrar la alerta SÓLO cuando el dispositivo esté en vertical (portrait) y sea una pantalla pequeña */
+@media screen and (max-width: 900px) and (orientation: portrait) {
+    #orientation-warning {
+        display: flex;
+    }
+}
+
+.close-warning-btn {
+    background: transparent;
+    border: 1px solid rgba(0, 243, 255, 0.4);
+    color: #00f3ff;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    align-self: flex-end;
+    margin-bottom: 5px;
+}
+.close-warning-btn:hover {
+    background: rgba(0, 243, 255, 0.15);
+}
+
+/* ==========================================================
+   OPTIMIZACIÓN RESPONSIVA MULTI-DISPOSITIVO (OVERDRIVE)
+   ========================================================== */
+
+/* A. MÓVILES EN VERTICAL (PORTRAIT) */
+@media screen and (max-width: 768px) and (orientation: portrait) {
+    body {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto; /* Permite scroll vertical fluido si es necesario */
+    }
+
+    /* 1. Fondo adaptado sin zoom agresivo */
+    .garage-container {
+        background-size: cover;
+        background-position: center 30%; /* Enfoca la zona media alta del garaje */
+    }
+
+    .car-image-cutout {
+        max-width: 220px !important; /* Un tamaño frontal perfecto y limpio */
+        max-height: 140px !important;
+        transform: perspective(800px) rotateY(0deg) scale(1) !important; /* De frente absoluto */
+        filter: drop-shadow(0 15px 20px rgba(0, 0, 0, 0.9));
+    }
+
+    .rotate-btn {
+        display: none; 
+    }
+
+    /* HUD Superior Compacto en Vertical */
+    .hud-header {
+        width: 100%;
+        margin: 0;
+        padding: 12px 15px;
+        transform: none; /* Quitamos la perspectiva extrema en vertical para ganar espacio */
+        border-radius: 14px;
+    }
+
+    .hud-left {
+        gap: 15px;
+    }
+
+    .hud-avatar {
+        width: 50px;
+        height: 50px;
+    }
+
+    .hud-top-line {
+        font-size: 0.85rem;
+    }
+
+    .hud-metrics-row {
+        gap: 15px;
+    }
+
+    .metric-item span {
+        font-size: 0.6rem;
+    }
+
+    .metric-item strong {
+        font-size: 0.95rem;
+    }
+
+    .divider-vertical {
+        height: 20px;
+    }
+
+    /* Cartel del Patrocinador reubicado elegantemente en la pared izquierda vertical */
+    .wall-poster-sponsor {
+        position: relative;
+        top: auto;
+        left: auto;
+        width: 100%;
+        max-width: 220px;
+        margin: 5px auto;
+        transform: none;
+        padding: 10px 14px;
+    }
+
+    /* Escenario del Vehículo adaptado */
+    .garage-stage {
+        height: 180px;
+        margin: 5px 0;
+    }
+
+    .car-image-cutout {
+        max-width: 260px;
+        max-height: 150px;
+    }
+
+    .rotate-btn {
+        bottom: 5px;
+        right: 10px;
+        font-size: 0.75rem;
+        padding: 5px 10px;
+    }
+
+    /* Botones Inferiores en Cuadrícula Compacta y Estilizada */
+    .hud-footer-container {
+        position: relative;
+        margin-top: 10px;
+        padding-bottom: 20px;
+    }
+
+    .hud-buttons-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .neon-btn {
+        padding: 10px 8px;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+}
+
+/* =========================================================
+   CORRECCIÓN DE INTERACTIVIDAD PARA BOTONES EN ESCRITORIO
+   ========================================================= */
+
+/* 1. Asegurar que los contenedores no capturen clics en áreas transparentes */
+.garage-container {
+    pointer-events: none;
+}
+
+/* 2. Reactivar los clics exclusivamente en los elementos interactivos del HUD */
+.hud-header, 
+.wall-poster-sponsor, 
+.floating-panel, 
+.modal-content,
+.hud-footer-container {
+    pointer-events: auto !important;
+}
+
+/* 3. Elevar la barra de botones inferior por encima de cualquier otra capa */
+.hud-footer-container {
+    position: relative;
+    z-index: 9999 !important;
+}
+
+.hud-buttons-row {
+    position: relative;
+    z-index: 10000 !important;
+    pointer-events: auto !important;
+}
+
+/* 4. Forzar que todos los botones tengan cursor tipo 'pointer' y respuesta inmediata */
+.neon-btn, 
+.btn-hud-action, 
+button {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+/* =========================================================
+   ESTILOS CYBERPUNK PARA EL MAPA (LEAFLET DARK THEME)
+   ========================================================= */
+
+/* Fondo oscuro para el contenedor del mapa */
+#map {
+    background-color: #080c14 !important;
+}
+
+/* Estilo de la ventana flotante (Popup) */
+.leaflet-popup-content-wrapper, 
+.leaflet-popup-tip {
+    background: rgba(10, 16, 30, 0.95) !important;
+    color: #e0f7fc !important;
+    border: 1px solid #00f0ff !important;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.4) !important;
+    font-family: 'Rajdhani', sans-serif !important;
+    backdrop-filter: blur(5px);
+}
+
+.leaflet-popup-content b {
+    color: #00f0ff !important;
+    font-family: 'Orbitron', sans-serif !important;
+    font-size: 1.1em;
+}
+
+/* Botón de cerrar del popup */
+.leaflet-container a.leaflet-popup-close-button {
+    color: #00f0ff !important;
+}
+
+/* Estilo limpio y nítido para el mapa tipo Dark Mode */
+.leaflet-tile-pane {
+    filter: brightness(0.25) contrast(1.3) saturate(0.2);
+}
+
+/* Forzar que los textos y marcadores no pierdan definición */
+.leaflet-marker-pane, .leaflet-popup-pane, .leaflet-control-container {
+    filter: none !important;
+}
+
+/* Efecto de pulso neón para la ubicación del usuario */
+.user-location-marker {
+    position: relative;
+}
+.gps-pulse {
+    width: 20px;
+    height: 20px;
+    background: #00f0ff;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 15px #00f0ff;
+    animation: pulse-animation 1.5s infinite;
+}
+@keyframes pulse-animation {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(0, 240, 255, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); }
+}
