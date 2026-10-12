@@ -172,121 +172,137 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Espacio comercial optimizado para marcas locales de Punto Fijo.");  
         });  
     }  
-  
-  // --- MAPA LEAFLET Y GPS BLINDADO CON BOTÓN MANUAL ---  
-    function initMap() {  
-        const puntoFijoCoords = [11.7167, -70.1333];  
-        map = L.map('map').setView(puntoFijoCoords, 13);  
-  
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {  
-            maxZoom: 19,  
-            attribution: '© OpenStreetMap contributors'  
-        }).addTo(map);  
-  
-        cargarEstaciones();  
-        detectarUbicacionUsuario(); 
 
-        // Crear un botón flotante dentro del mapa para forzar la ubicación manual
-        const gpsControl = L.control({position: 'topright'});
-        gpsControl.onAdd = function(map) {
-            const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-            div.innerHTML = `
-                <button title="Centrar en mi ubicación" style="
-                    background: rgba(10, 16, 30, 0.9); 
-                    color: #00f0ff; 
-                    border: 1px solid #00f0ff; 
-                    padding: 8px 12px; 
-                    cursor: pointer; 
-                    font-family: 'Orbitron', sans-serif;
-                    font-weight: bold;
-                    font-size: 11px;
-                    border-radius: 4px;
-                    box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
-                ">📍 GPS</button>
-            `;
-            div.onclick = function(e) {
-                e.stopPropagation();
-                detectarUbicacionUsuario(true); // Forzar alta precisión al hacer clic
-            }
-            return div;
-        };
-        gpsControl.addTo(map);
-    }  
+    // --- MAPA LEAFLET ESCALABLE (CARTO-DB DARK MATTER) ---  
+function initMap() {  
+    const puntoFijoCoords = [11.7167, -70.1333];  
+    map = L.map('map').setView(puntoFijoCoords, 13);  
+  
+    // Capa profesional oscura de CartoDB (Nítida, sin filtros borrosos y escalable)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {  
+        maxZoom: 19,  
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxNativeZoom: 20
+    }).addTo(map);  
+  
+    cargarEstaciones();  
+    detectarUbicacionUsuario(); 
+    agregarBotonGPSManual();
+}  
 
-    let userMarker = null;
-
-    function detectarUbicacionUsuario(forzarAlta = false) {  
-        if (!("geolocation" in navigator)) {  
-            console.log("Geolocalización no soportada por este navegador.");
-            return;  
+// Botón flotante para control manual del GPS
+function agregarBotonGPSManual() {
+    const gpsControl = L.control({position: 'topright'});
+    gpsControl.onAdd = function(map) {
+        const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+        div.innerHTML = `
+            <button title="Centrar en mi ubicación" style="
+                background: rgba(10, 16, 30, 0.9); 
+                color: #00f0ff; 
+                border: 1px solid #00f0ff; 
+                padding: 8px 12px; 
+                cursor: pointer; 
+                font-family: 'Orbitron', sans-serif;
+                font-weight: bold;
+                font-size: 11px;
+                border-radius: 4px;
+                box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+            ">📍 GPS</button>
+        `;
+        div.onclick = function(e) {
+            e.stopPropagation();
+            detectarUbicacionUsuario(true);
         }
+        return div;
+    };
+    gpsControl.addTo(map);
+}
 
-        // Configuración flexible (intenta alta precisión, si falla usa caché/baja precisión)
-        const opcionesGPS = {
-            enableHighAccuracy: true,
-            timeout: 7000,           // 7 segundos máximo de espera
-            maximumAge: 60000        // Acepta una lectura reciente de hasta 1 minuto
-        };
+let userMarker = null;
 
-        navigator.geolocation.getCurrentPosition(  
-            (position) => {  
-                const userLat = position.coords.latitude;  
-                const userLng = position.coords.longitude;  
-
-                map.setView([userLat, userLng], 16);  
-
-                const userIcon = L.divIcon({  
-                    className: 'user-location-marker',  
-                    html: '<div class="gps-pulse"></div>',  
-                    iconSize: [24, 24]  
-                });  
-
-                if (userMarker) {
-                    userMarker.setLatLng([userLat, userLng]);
-                } else {
-                    userMarker = L.marker([userLat, userLng], { icon: userIcon })  
-                        .addTo(map)  
-                        .bindPopup("<b>¡Tu Ubicación Actual!</b>")  
-                        .openPopup();  
-                }
-            },  
-            (error) => {  
-                console.warn("Aviso de GPS (intentando método secundario):", error.message);
-                
-                // SEGUNDO INTENTO: Modo de baja precisión (funciona mejor en móviles con red móvil/Wi-Fi)
-                navigator.geolocation.getCurrentPosition(
-                    (posFallback) => {
-                        const lat = posFallback.coords.latitude;
-                        const lng = posFallback.coords.longitude;
-                        map.setView([lat, lng], 15);
-
-                        const userIcon = L.divIcon({
-                            className: 'user-location-marker',
-                            html: '<div class="gps-pulse"></div>',
-                            iconSize: [24, 24]
-                        });
-
-                        if (userMarker) {
-                            userMarker.setLatLng([lat, lng]);
-                        } else {
-                            userMarker = L.marker([lat, lng], { icon: userIcon })
-                                .addTo(map)
-                                .bindPopup("<b>¡Ubicación Aproximada!</b>")
-                                .openPopup();
-                        }
-                    },
-                    (errFallback) => {
-                        console.log("GPS no disponible:", errFallback.message);
-                        // Si de plano no hay GPS o está bloqueado, centramos por defecto en Punto Fijo para que el mapa no quede perdido
-                        map.setView([11.7167, -70.1333], 13);
-                    },
-                    { enableHighAccuracy: false, timeout: 10000 }
-                );
-            },  
-            opcionesGPS  
-        );  
+function detectarUbicacionUsuario(forzarAlta = false) {  
+    if (!("geolocation" in navigator)) {  
+        alert("Tu navegador móvil no soporta geolocalización.");
+        return;  
     }
-  
+
+    console.log("Solicitando geolocalización al dispositivo...");
+
+    const opcionesGPS = {
+        enableHighAccuracy: true,
+        timeout: 15000,           // 15 segundos de margen para móviles
+        maximumAge: 0             // Forzar lectura fresca del sensor GPS
+    };
+
+    navigator.geolocation.getCurrentPosition(  
+        (position) => {  
+            const userLat = position.coords.latitude;  
+            const userLng = position.coords.longitude;  
+
+            console.log(`GPS OK -> Lat: ${userLat}, Lng: ${userLng}`);
+
+            // Centrar mapa en la posición real
+            map.setView([userLat, userLng], 16);  
+
+            const userIcon = L.divIcon({  
+                className: 'user-location-marker',  
+                html: '<div class="gps-pulse"></div>',  
+                iconSize: [24, 24]  
+            });  
+
+            if (userMarker) {
+                userMarker.setLatLng([userLat, userLng]);
+            } else {
+                userMarker = L.marker([userLat, userLng], { icon: userIcon })  
+                    .addTo(map)  
+                    .bindPopup("<b>¡Tu Ubicación Actual!</b>")  
+                    .openPopup();  
+            }
+        },  
+        (error) => {  
+            console.warn("Error GPS principal:", error.code, error.message);
+            
+            // Si el usuario denegó el permiso explícitamente
+            if (error.code === 1) {
+                alert("Permiso de ubicación denegado. Por favor, habilítalo en los ajustes de permisos de tu navegador.");
+                return;
+            }
+
+            // Fallback a baja precisión si el GPS satelital tarda mucho
+            navigator.geolocation.getCurrentPosition(
+                (posFallback) => {
+                    const lat = posFallback.coords.latitude;
+                    const lng = posFallback.coords.longitude;
+                    console.log(`GPS Fallback OK -> Lat: ${lat}, Lng: ${lng}`);
+                    
+                    map.setView([lat, lng], 15);
+
+                    const userIcon = L.divIcon({
+                        className: 'user-location-marker',
+                        html: '<div class="gps-pulse"></div>',
+                        iconSize: [24, 24]
+                    });
+
+                    if (userMarker) {
+                        userMarker.setLatLng([lat, lng]);
+                    } else {
+                        userMarker = L.marker([lat, lng], { icon: userIcon })
+                            .addTo(map)
+                            .bindPopup("<b>¡Ubicación Aproximada (Red)!</b>")
+                            .openPopup();
+                    }
+                },
+                (errFallback) => {
+                    console.error("Error GPS Fallback:", errFallback.message);
+                    alert("No se pudo obtener la señal GPS. Verifica que la ubicación del teléfono esté activada.");
+                },
+                { enableHighAccuracy: false, timeout: 10000 }
+            );
+        },  
+        opcionesGPS  
+    );  
+}
     async function cargarEstaciones() {  
         try {  
             const { data: stations, error } = await supabase  
