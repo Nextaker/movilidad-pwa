@@ -12,6 +12,11 @@
     <link rel="stylesheet" href="style.css">
 
     <link rel="manifest" href="manifest.json">
+
+    <!-- Mapbox GL CSS -->
+<link href='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css' rel='stylesheet' />
+<!-- Mapbox GL JS -->
+<script src='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js'></script>
 </head>
 <body>
 <div id="orientation-warning" class="orientation-overlay">
@@ -29,7 +34,7 @@
         <header class="hud-header">
             <div class="hud-left">
                 <div class="hud-avatar-container">
-                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150&auto=format&fit=crop" alt="Avatar" class="hud-avatar">
+                    <img src="https://images.unsplash.com/ alt="Avatar" class="hud-avatar">
                 </div>
                 <div class="hud-info-block">
                     <!-- LÍNEA 1: Saludo, Coche y Estado -->
@@ -72,32 +77,52 @@
         <!-- ESCENARIO CENTRAL: Vehículo y Control de Rotación -->
         <div class="garage-stage">
 
-            <!-- Botón flotante para Rotar Ángulo del Vehículo -->
-            <button class="rotate-btn" id="btn-rotate-view" title="Cambiar perspectiva">
-                🔄 Rotar Vista
-            </button>
+            <!-- CARRUSEL HUD 3D ENVOLVENTE -->
+    <div class="cyber-carousel">
+        <div class="cyber-card" id="card-open-map">
+            <div class="cyber-card-icon">🗺️</div>
+            <div class="cyber-card-title">MAPA</div>
+            <div class="cyber-card-sub">LIVE GPS</div>
         </div>
 
-        <!-- HUD INFERIOR Y BOTONES DE NAVEGACIÓN -->
-        <footer class="hud-footer-container">
-            <div class="hud-buttons-row">
-                <button class="neon-btn primary" id="btn-open-map">🗺️ Ver Mapa de Bombas</button>
-                <button class="neon-btn" id="btn-open-favorites">⭐ Mis Favoritos</button>
-                <button class="neon-btn" id="btn-open-modal">⚙️ Cambiar Vehículo</button>
-                <button class="neon-btn" id="btn-open-ads">📢 Patrocinantes</button>
-            </div>
-            
-            <div class="ads-banner">
-                <span>Espacio Patrocinado • Punto Fijo</span>
-                <p>🛞 Paraguaná Tires & Lubricantes — ¡Los mejores precios en repuestos!</p>
-            </div>
-        </footer>
+        <div class="cyber-card" id="card-open-player">
+            <div class="cyber-card-icon">🎵</div>
+            <div class="cyber-card-title">MÚSICA</div>
+            <div class="cyber-card-sub">AUDIO HUD</div>
+        </div>
+
+        <div class="cyber-card" id="card-open-favorites">
+            <div class="cyber-card-icon">⭐</div>
+            <div class="cyber-card-title">FAVORITOS</div>
+            <div class="cyber-card-sub">ACCESOS</div>
+        </div>
+
+        <div class="cyber-card" id="card-open-ads">
+            <div class="cyber-card-icon">📢</div>
+            <div class="cyber-card-title">ANUNCIOS</div>
+            <div class="cyber-card-sub">PATROCINIOS</div>
+        </div>
+    </div>
+        
+        
+        
+        <!-- HUD INFERIOR Y CARRUSEL DE TARJETAS -->
+<footer class="hud-footer-container" style="display: flex; flex-direction: column; align-items: center; width: 100%; padding: 10px;">
+    
+
+    <!-- BOTONES PRINCIPALES INFERIORES -->
+    <div class="hud-buttons-row" style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 10px;">
+        <button class="cyber-btn" id="btn-open-map">🚀 INICIAR MAPA DE BOMBAS</button>
+        <button class="cyber-btn" id="btn-open-modal">⚙️ CONFIG VEHÍCULO</button>
+    </div>
+    
+</footer>
 
     </div>
 
     <!-- VISTA 2: EL MAPA EN VIVO -->
     <div id="map-view">
-        <button class="neon-btn back-to-garage" id="btn-back-garage">⬅️ Volver al Garaje</button>
+        <button class="neon-btn back-to-garage" id="btn-back-garage">⬅️Volver</button>
         <div id="map" style="height: 100%; width: 100%;"></div>
     </div>
     <!-- MODAL SELECTOR DE VEHÍCULO (CATÁLOGO PROFESIONAL) -->

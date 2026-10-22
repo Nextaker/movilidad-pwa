@@ -1,8 +1,8 @@
-// js/main.js - Controlador Principal Overdrive  
+// js/main.js - Controlador Principal Overdrive (Mapbox GL Native)  
 import { supabase } from './services/supabaseClient.js';  
   
 document.addEventListener('DOMContentLoaded', () => {  
-    console.log("⚡ Overdrive HUD Inicializado");  
+    console.log("⚡ Overdrive HUD Inicializado (Mapbox GL)");  
   
     // --- 1. ELEMENTOS DEL DOM ---  
     const garageView = document.getElementById('garage-view');  
@@ -93,7 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selectedCar) {  
             if (displayCarName) displayCarName.textContent = selectedCar.name;  
   
-            // Obtener la imagen según el color, o la primera disponible como respaldo
             const imagePath = selectedCar.images[colorKey] || Object.values(selectedCar.images)[0];
 
             if (garageContainer) {
@@ -109,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }  
     }
   
-    // --- 3. NAVEGACIÓN VISTAS ---  
+    // --- 3. NAVEGACIÓN VISTAS Y MAPA ---  
     let mapInitialized = false;  
     let map;  
   
@@ -122,9 +121,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 initMap();  
                 mapInitialized = true;  
             } else if (map) {  
-                map.invalidateSize();  
-                // Forzar reubicación al abrir el mapa de nuevo
-                detectarUbicacionUsuario();
+                map.resize(); // Reajustar contenedor de Mapbox al cambiar de vista
+                detectarUbicacionUsuarioMapbox();
             }  
         });  
     }  
@@ -171,139 +169,138 @@ document.addEventListener('DOMContentLoaded', () => {
         btnOpenAds.addEventListener('click', () => {  
             alert("Espacio comercial optimizado para marcas locales de Punto Fijo.");  
         });  
-    }  
+    }     
 
-    // --- MAPA LEAFLET ESCALABLE (CARTO-DB DARK MATTER) ---  
-function initMap() {  
-    const puntoFijoCoords = [11.7167, -70.1333];  
-    map = L.map('map').setView(puntoFijoCoords, 13);  
-  
-    // Capa profesional oscura de CartoDB (Nítida, sin filtros borrosos y escalable)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {  
-        maxZoom: 19,  
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxNativeZoom: 20
-    }).addTo(map);  
-  
-    cargarEstaciones();  
-    detectarUbicacionUsuario(); 
-    agregarBotonGPSManual();
-}  
+    // --- MAPA MAPBOX GL NATIVO (Estilo Standard-Satellite) ---  
+    function initMap() {  
+        mapboxgl.accessToken = 'pk.eyJ1IjoibmV4dGFrZXIiLCJhIjoiY212NWxiN2Z4MDdpMTJ6b2cxeWQ3cjcwOSJ9.TI4OWazCfVGC0-rlCwkA2w';
 
-// Botón flotante para control manual del GPS
-function agregarBotonGPSManual() {
-    const gpsControl = L.control({position: 'topright'});
-    gpsControl.onAdd = function(map) {
-        const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-        div.innerHTML = `
-            <button title="Centrar en mi ubicación" style="
-                background: rgba(10, 16, 30, 0.9); 
+        // Mapbox utiliza formato [longitud, latitud]
+        const puntoFijoCoords = [-70.1333, 11.7167];  
+
+        map = new mapboxgl.Map({  
+            container: 'map', // ID del div en el HTML
+            style: 'mapbox://styles/mapbox/standard-satellite', // Estilo satelital inmersivo
+            center: puntoFijoCoords,  
+            zoom: 13,
+            pitch: 30 // Inclinación ligera para darle profundidad 3D industrial
+        });  
+
+        // Controles de navegación nativos de Mapbox (Zoom y orientación)
+        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+        // Agregar botón GPS manual flotante
+        agregarBotonGPSManualMapbox();
+
+        map.on('load', () => {
+            cargarEstacionesMapbox();
+            detectarUbicacionUsuarioMapbox();
+        });
+    }
+
+    // Botón flotante personalizado para Mapbox
+    function agregarBotonGPSManualMapbox() {
+        const customControl = document.createElement('div');
+        customControl.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+        customControl.innerHTML = `
+            <button title="Centrar GPS" style="
+                background: rgba(10, 16, 30, 0.95); 
                 color: #00f0ff; 
-                border: 1px solid #00f0ff; 
-                padding: 8px 12px; 
+                border: none; 
+                padding: 6px 10px; 
                 cursor: pointer; 
                 font-family: 'Orbitron', sans-serif;
                 font-weight: bold;
                 font-size: 11px;
-                border-radius: 4px;
-                box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
             ">📍 GPS</button>
         `;
-        div.onclick = function(e) {
+        customControl.onclick = (e) => {
             e.stopPropagation();
-            detectarUbicacionUsuario(true);
+            detectarUbicacionUsuarioMapbox(true);
+        };
+        
+        // Lo añadimos al control container de Mapbox
+        const controlContainer = document.querySelector('.mapboxgl-ctrl-top-right');
+        if (controlContainer) {
+            controlContainer.appendChild(customControl);
         }
-        return div;
-    };
-    gpsControl.addTo(map);
-}
-
-let userMarker = null;
-
-function detectarUbicacionUsuario(forzarAlta = false) {  
-    if (!("geolocation" in navigator)) {  
-        alert("Tu navegador móvil no soporta geolocalización.");
-        return;  
     }
 
-    console.log("Solicitando geolocalización al dispositivo...");
+    let userMarker = null;
 
-    const opcionesGPS = {
-        enableHighAccuracy: true,
-        timeout: 15000,           // 15 segundos de margen para móviles
-        maximumAge: 0             // Forzar lectura fresca del sensor GPS
-    };
+    function detectarUbicacionUsuarioMapbox(forzarAlta = false) {  
+        if (!("geolocation" in navigator)) {  
+            alert("Tu navegador móvil no soporta geolocalización.");
+            return;  
+        }
 
-    navigator.geolocation.getCurrentPosition(  
-        (position) => {  
-            const userLat = position.coords.latitude;  
-            const userLng = position.coords.longitude;  
+        console.log("Solicitando geolocalización Mapbox...");
 
-            console.log(`GPS OK -> Lat: ${userLat}, Lng: ${userLng}`);
+        const opcionesGPS = {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+        };
 
-            // Centrar mapa en la posición real
-            map.setView([userLat, userLng], 16);  
+        navigator.geolocation.getCurrentPosition(  
+            (position) => {  
+                const userLat = position.coords.latitude;  
+                const userLng = position.coords.longitude;  
 
-            const userIcon = L.divIcon({  
-                className: 'user-location-marker',  
-                html: '<div class="gps-pulse"></div>',  
-                iconSize: [24, 24]  
-            });  
+                console.log(`GPS Mapbox OK -> Lat: ${userLat}, Lng: ${userLng}`);
 
-            if (userMarker) {
-                userMarker.setLatLng([userLat, userLng]);
-            } else {
-                userMarker = L.marker([userLat, userLng], { icon: userIcon })  
-                    .addTo(map)  
-                    .bindPopup("<b>¡Tu Ubicación Actual!</b>")  
-                    .openPopup();  
-            }
-        },  
-        (error) => {  
-            console.warn("Error GPS principal:", error.code, error.message);
-            
-            // Si el usuario denegó el permiso explícitamente
-            if (error.code === 1) {
-                alert("Permiso de ubicación denegado. Por favor, habilítalo en los ajustes de permisos de tu navegador.");
-                return;
-            }
+                // Volar suavemente hacia la posición actual
+                map.flyTo({ center: [userLng, userLat], zoom: 16 });
 
-            // Fallback a baja precisión si el GPS satelital tarda mucho
-            navigator.geolocation.getCurrentPosition(
-                (posFallback) => {
-                    const lat = posFallback.coords.latitude;
-                    const lng = posFallback.coords.longitude;
-                    console.log(`GPS Fallback OK -> Lat: ${lat}, Lng: ${lng}`);
-                    
-                    map.setView([lat, lng], 15);
+                // Crear elemento visual para el marcador con pulso neón
+                const el = document.createElement('div');
+                el.className = 'user-location-marker';
+                el.innerHTML = '<div class="gps-pulse"></div>';
 
-                    const userIcon = L.divIcon({
-                        className: 'user-location-marker',
-                        html: '<div class="gps-pulse"></div>',
-                        iconSize: [24, 24]
-                    });
+                if (userMarker) {
+                    userMarker.setLngLat([userLng, userLat]);
+                } else {
+                    userMarker = new mapboxgl.Marker(el)
+                        .setLngLat([userLng, userLat])
+                        .setPopup(new mapboxgl.Popup().setHTML("<b>¡Tu Ubicación Actual!</b>"))
+                        .addTo(map);
+                }
+            },  
+            (error) => {  
+                console.warn("Error GPS Mapbox:", error.code, error.message);
+                
 
-                    if (userMarker) {
-                        userMarker.setLatLng([lat, lng]);
-                    } else {
-                        userMarker = L.marker([lat, lng], { icon: userIcon })
-                            .addTo(map)
-                            .bindPopup("<b>¡Ubicación Aproximada (Red)!</b>")
-                            .openPopup();
-                    }
-                },
-                (errFallback) => {
-                    console.error("Error GPS Fallback:", errFallback.message);
-                    alert("No se pudo obtener la señal GPS. Verifica que la ubicación del teléfono esté activada.");
-                },
-                { enableHighAccuracy: false, timeout: 10000 }
-            );
-        },  
-        opcionesGPS  
-    );  
-}
-    async function cargarEstaciones() {  
+                navigator.geolocation.getCurrentPosition(
+                    (posFallback) => {
+                        const lat = posFallback.coords.latitude;
+                        const lng = posFallback.coords.longitude;
+                        
+                        map.flyTo({ center: [lng, lat], zoom: 15 });
+
+                        const el = document.createElement('div');
+                        el.className = 'user-location-marker';
+                        el.innerHTML = '<div class="gps-pulse"></div>';
+
+                        if (userMarker) {
+                            userMarker.setLngLat([lng, lat]);
+                        } else {
+                            userMarker = new mapboxgl.Marker(el)
+                                .setLngLat([lng, lat])
+                                .setPopup(new mapboxgl.Popup().setHTML("<b>¡Ubicación Aproximada!</b>"))
+                                .addTo(map);
+                        }
+                    },
+                    (errFallback) => {
+                        console.error("Error Fallback:", errFallback.message);
+                    },
+                    { enableHighAccuracy: false, timeout: 10000 }
+                );
+            },  
+            opcionesGPS  
+        );  
+    }
+
+    async function cargarEstacionesMapbox() {  
         try {  
             const { data: stations, error } = await supabase  
                 .from('gas_stations')  
@@ -316,24 +313,101 @@ function detectarUbicacionUsuario(forzarAlta = false) {
   
             if (stations && stations.length > 0) {  
                 stations.forEach(station => {  
-                    let estadoTexto = "Desconocido";  
-                    if (station.status === 'open') estadoTexto = "🟢 Abierta / Operativa";  
-                    if (station.status === 'closed') estadoTexto = "🔴 Cerrada";  
-                    if (station.status === 'no_fuel') estadoTexto = "🟡 Sin Combustible";  
+                    let estadoTexto = "OPERATIVA";  
+                    let colorEstado = "#00ff66";
+                    if (station.status === 'closed') { estadoTexto = "CERRADA"; colorEstado = "#ff0055"; }
+                    if (station.status === 'no_fuel') { estadoTexto = "SIN COMBUSTIBLE"; colorEstado = "#ffaa00"; }
   
-                    const popupContent = `  
-                        <b>${station.name}</b><br>  
-                        Estado: ${estadoTexto}<br>  
-                        Métodos de pago: ${station.payment_methods || 'No especificado'}  
+                    // Contenedor principal del marcador (Diamante + Tarjeta HUD fija)
+                    const el = document.createElement('div');
+                    el.className = 'cyber-station-marker';
+                    el.innerHTML = `
+                        <div class="diamond-pin"></div>
+                        <div class="hud-station-card">
+                            <div class="hud-station-title">${station.name}</div>
+                            <div class="hud-station-status">ESTADO: <span style="color: ${colorEstado}; font-weight: bold;">${estadoTexto}</span></div>
+                        </div>
                     `;  
   
-                    L.marker([station.latitude, station.longitude])  
-                        .addTo(map)  
-                        .bindPopup(popupContent);  
+                    // Añadir marcador a Mapbox con anclaje superior para que la tarjeta quede debajo del diamante
+                    new mapboxgl.Marker({ element: el, anchor: 'top' })
+                        .setLngLat([station.longitude, station.latitude])
+                        .addTo(map);
                 });  
             }  
         } catch (err) {  
             console.error('Error de red al conectar con Supabase:', err);  
         }  
+    
     }  
+
+    // --- REPRODUCTOR DE MÚSICA AMBIENTAL HUD ---
+    function inicializarReproductorHUD() {
+        const hudContainer = document.querySelector('.garage-container') || document.body;
+        
+        // Creamos un widget flotante discreto para la música
+        const musicWidget = document.createElement('div');
+        musicWidget.innerHTML = `
+            <div id="hud-audio-player" style="
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                z-index: 999;
+                background: rgba(5, 8, 17, 0.85);
+                border: 1px solid #00f0ff;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-family: 'Orbitron', sans-serif;
+                font-size: 10px;
+                color: #00f0ff;
+                box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            ">
+                <span>🎵 HUD AUDIO</span>
+                <button id="btn-toggle-audio" style="
+                    background: #00f0ff;
+                    color: #050811;
+                    border: none;
+                    padding: 4px 8px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    border-radius: 3px;
+                ">PLAY</button>
+            </div>
+        `;
+        document.body.appendChild(musicWidget);
+
+        // Audio de fondo suave (Ejemplo de pista libre de tipo synthwave/lofi ambiental)
+        // Puedes cambiar la URL por un archivo .mp3 alojado en tu carpeta 'assets/audio/'
+        const audio = new Audio('./assets/audio/cyberpunk-bg.mp3');
+        audio.loop = true;
+        audio.volume = 0.3; // Volumen moderado y suave
+
+        const btnToggle = document.getElementById('btn-toggle-audio');
+        let isPlaying = false;
+
+        btnToggle.addEventListener('click', () => {
+            if (!isPlaying) {
+                audio.play().then(() => {
+                    isPlaying = true;
+                    btnToggle.textContent = 'MUTE';
+                    btnToggle.style.background = '#ff0055';
+                    btnToggle.style.color = '#fff';
+                }).catch(err => console.log("Bloqueo de audio por navegador:", err));
+            } else {
+                audio.pause();
+                isPlaying = false;
+                btnToggle.textContent = 'PLAY';
+                btnToggle.style.background = '#00f0ff';
+                btnToggle.style.color = '#050811';
+            }
+        });
+    }
+
+    // Llamar a la función al iniciar el DOM principal
+    inicializarReproductorHUD();
 });
+
+
