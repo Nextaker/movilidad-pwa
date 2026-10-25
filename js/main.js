@@ -156,11 +156,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         map = new mapboxgl.Map({  
             container: 'map',  
-            style: 'mapbox://styles/mapbox/standard-satellite',  
+            style: 'mapbox://styles/mapbox/satellite-v9', // <--- Usa este estilo satelital clásico y blindado
             center: puntoFijoCoords,  
             zoom: 13,
             pitch: 30 
-        });  
+        });
 
         map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
