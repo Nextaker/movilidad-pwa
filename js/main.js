@@ -1,14 +1,15 @@
-// js/main.js - Controlador Principal Overdrive (Mapbox GL)  
+// js/main.js - Controlador Principal Overdrive (Híbrido Mapbox GL / Leaflet)  
 import { supabase } from './services/supabaseClient.js';  
   
 document.addEventListener('DOMContentLoaded', () => {  
-    console.log("⚡ Overdrive HUD Inicializado (Mapbox GL)");  
+    console.log("⚡ Overdrive HUD Inicializado");  
   
     // --- 1. ELEMENTOS DEL DOM ---  
     const garageView = document.getElementById('garage-view');  
     const mapView = document.getElementById('map-view');  
     const btnOpenMap = document.getElementById('btn-open-map');  
     const btnBackGarage = document.getElementById('btn-back-garage');  
+    const cardOpenMap = document.getElementById('card-open-map');
   
     // Modal y Controles  
     const carModal = document.getElementById('car-modal');  
@@ -30,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnCloseWarning.addEventListener('click', () => {  
             orientationWarning.style.display = 'none';  
         });  
-    }
+    }  
   
     // Registrar Service Worker  
     if ('serviceWorker' in navigator) {  
@@ -105,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('user_car_color', colorKey);
             console.log(`Garaje cargado: ${selectedCar.name} [${colorKey}]`);
         }  
-    }
+    }  
   
     // --- MODAL ---  
     if (btnOpenModal) {  
@@ -143,35 +144,51 @@ document.addEventListener('DOMContentLoaded', () => {
         });  
     }     
 
-    // --- 3. NAVEGACIÓN Y MAPBOX GL ---  
+    // --- 3. MOTORES DE MAPAS (MAPBOX GL & LEAFLET) ---  
     let mapInitialized = false;  
-    let map;  
+    let map = null;  
     let userMarker = null;
+    let currentEngine = localStorage.getItem('overdrive_map_engine') || 'mapbox';
 
-    function initMap() {  
+    const btnToggleEngine = document.getElementById('btn-toggle-engine');
+    const engineLabel = document.getElementById('engine-label');
+
+    if (btnToggleEngine && engineLabel) {
+        engineLabel.textContent = currentEngine === 'mapbox' ? 'Mapbox 3D' : 'Leaflet 2D';
+
+        btnToggleEngine.addEventListener('click', () => {
+            currentEngine = currentEngine === 'mapbox' ? 'leaflet' : 'mapbox';
+            localStorage.setItem('overdrive_map_engine', currentEngine);
+            alert(`Cambiando motor a ${currentEngine.toUpperCase()}. Recargando interfaz...`);
+            location.reload();
+        });
+    }
+
+    // --- INICIALIZADOR DE MAPBOX ---
+    function initMapbox() {  
         mapboxgl.accessToken = 'pk.eyJ1IjoibmV4dGFrZXIiLCJhIjoiY212NWxiN2Z4MDdpMTJ6b2cxeWQ3cjcwOSJ9.TI4OWazCfVGC0-rlCwkA2w';
 
-        // Mapbox usa [lng, lat]
         const puntoFijoCoords = [-70.1333, 11.7167];  
 
         map = new mapboxgl.Map({  
             container: 'map',  
-            style: 'mapbox://styles/mapbox/satellite-v9', // <--- Usa este estilo satelital clásico y blindado
+            style: 'mapbox://styles/mapbox/satellite-streets-v12',  
             center: puntoFijoCoords,  
             zoom: 13,
-            pitch: 30 
+            pitch: 0 
         });
 
         map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
         map.on('load', () => {
-            console.log("Mapa de Mapbox cargado correctamente.");
+            console.log("Mapa de Mapbox inicializado correctamente.");
+            map.resize();
             cargarEstacionesMapbox();
-            detectarUbicacionUsuarioMapbox();
+            detectarUbicacionMapbox();
         });
     }
 
-    function detectarUbicacionUsuarioMapbox() {  
+    function detectarUbicacionMapbox() {  
         if (!("geolocation" in navigator)) return;  
 
         navigator.geolocation.getCurrentPosition(  
@@ -179,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const userLat = position.coords.latitude;  
                 const userLng = position.coords.longitude;  
 
-                map.flyTo({ center: [userLng, userLat], zoom: 15 });
+                if (map) map.flyTo({ center: [userLng, userLat], zoom: 15 });
 
                 if (!userMarker) {
                     const el = document.createElement('div');
@@ -194,32 +211,102 @@ document.addEventListener('DOMContentLoaded', () => {
                     userMarker.setLngLat([userLng, userLat]);
                 }
             },  
-            (error) => console.warn("Error GPS:", error.message),  
+            (error) => console.warn("Error GPS Mapbox:", error.message),  
             { enableHighAccuracy: true, timeout: 10000 }  
         );  
     }
 
     async function cargarEstacionesMapbox() {  
         try {  
-            const { data: stations, error } = await supabase  
-                .from('gas_stations')  
-                .select('*');  
+            const { data: stations, error } = await supabase.from('gas_stations').select('*');  
+            if (error || !stations) return;  
   
-            if (error) {  
-                console.warn('Error Supabase:', error.message);  
-                return;  
-            }  
-  
-            if (stations && stations.length > 0) {  
-                stations.forEach(station => {  
-                    let estadoTexto = "OPERATIVA";  
-                    let colorEstado = "#00ff66";
-                    if (station.status === 'closed') { estadoTexto = "CERRADA"; colorEstado = "#ff0055"; }
-                    if (station.status === 'no_fuel') { estadoTexto = "SIN COMBUSTIBLE"; colorEstado = "#ffaa00"; }
-  
-                    const el = document.createElement('div');
-                    el.className = 'cyber-station-marker';
-                    el.innerHTML = `
+            stations.forEach(station => {  
+                let estadoTexto = "OPERATIVA";  
+                let colorEstado = "#00ff66";
+                if (station.status === 'closed') { estadoTexto = "CERRADA"; colorEstado = "#ff0055"; }
+                if (station.status === 'no_fuel') { estadoTexto = "SIN COMBUSTIBLE"; colorEstado = "#ffaa00"; }
+
+                const el = document.createElement('div');
+                el.className = 'cyber-station-marker';
+                el.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="diamond-pin"></div>
+                        <div class="hud-station-card">
+                            <div class="hud-station-title">${station.name}</div>
+                            <div class="hud-station-status">ESTADO: <span style="color: ${colorEstado}; font-weight: bold;">${estadoTexto}</span></div>
+                        </div>
+                    </div>
+                `;
+
+                new mapboxgl.Marker(el)
+                    .setLngLat([station.longitude, station.latitude])
+                    .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(`<b>${station.name}</b><br>Estado: ${estadoTexto}`))
+                    .addTo(map);
+            });  
+        } catch (err) {  
+            console.error('Error Supabase:', err);  
+        }  
+    }
+
+    // --- INICIALIZADOR DE LEAFLET ---
+    function initLeaflet() {
+        const puntoFijoCoords = [11.7167, -70.1333]; // Leaflet usa [lat, lng]
+
+        map = L.map('map').setView(puntoFijoCoords, 13);
+
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '&copy; Esri World Imagery',
+            maxZoom: 19,
+            maxNativeZoom: 17
+        }).addTo(map);
+
+        cargarEstacionesLeaflet();
+        detectarUbicacionLeaflet();
+    }
+
+    function detectarUbicacionLeaflet() {
+        if (!("geolocation" in navigator)) return;
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+
+                if (map) map.setView([userLat, userLng], 15);
+
+                const pulseIcon = L.divIcon({
+                    className: 'user-location-marker',
+                    html: '<div class="gps-pulse"></div>',
+                    iconSize: [24, 24]
+                });
+
+                if (userMarker) {
+                    userMarker.setLatLng([userLat, userLng]);
+                } else {
+                    userMarker = L.marker([userLat, userLng], { icon: pulseIcon }).addTo(map)
+                        .bindPopup("<b>¡Tu Ubicación Actual!</b>");
+                }
+            },
+            (error) => console.warn("Error GPS Leaflet:", error.message),
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    }
+
+    async function cargarEstacionesLeaflet() {
+        try {
+            const { data: stations, error } = await supabase.from('gas_stations').select('*');
+            if (error || !stations) return;
+
+            stations.forEach(station => {
+                let estadoTexto = "OPERATIVA";
+                let colorEstado = "#00ff66";
+                if (station.status === 'closed') { estadoTexto = "CERRADA"; colorEstado = "#ff0055"; }
+                if (station.status === 'no_fuel') { estadoTexto = "SIN COMBUSTIBLE"; colorEstado = "#ffaa00"; }
+
+                const stationIcon = L.divIcon({
+                    className: 'cyber-station-marker',
+                    html: `
                         <div style="display: flex; flex-direction: column; align-items: center;">
                             <div class="diamond-pin"></div>
                             <div class="hud-station-card">
@@ -227,43 +314,41 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div class="hud-station-status">ESTADO: <span style="color: ${colorEstado}; font-weight: bold;">${estadoTexto}</span></div>
                             </div>
                         </div>
-                    `;
+                    `,
+                    iconSize: [120, 50],
+                    iconAnchor: [60, 0]
+                });
 
-                    const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-                        <b>${station.name}</b><br>Estado: ${estadoTexto}
-                    `);
-
-                    new mapboxgl.Marker(el)
-                        .setLngLat([station.longitude, station.latitude])
-                        .setPopup(popup)
-                        .addTo(map);
-                });  
-            }  
-        } catch (err) {  
-            console.error('Error Supabase:', err);  
-        }  
+                L.marker([station.latitude, station.longitude], { icon: stationIcon }).addTo(map);
+            });
+        } catch (err) {
+            console.error('Error Supabase:', err);
+        }
     }
 
-    // Apertura de vista de mapa con redimensionamiento seguro
-    const cardOpenMap = document.getElementById('card-open-map');
-
-    function abrirMapaMapbox() {
+    // --- MANEJO DE NAVEGACIÓN DE VISTAS Y MAPA ---
+    function abrirMapaSegunPreferencia() {
         if (garageView) garageView.style.display = 'none';  
         if (mapView) mapView.style.display = 'block';  
 
         if (!mapInitialized) {  
-            initMap();  
+            if (currentEngine === 'mapbox') {
+                initMapbox();
+            } else {
+                initLeaflet();
+            }
             mapInitialized = true;  
-        } else if (map) {  
-            setTimeout(() => {
-                map.resize();
-                detectarUbicacionUsuarioMapbox();
-            }, 150);
-        }  
+        } else if (map) {
+            if (currentEngine === 'mapbox') {
+                setTimeout(() => map.resize(), 150);
+            } else {
+                map.invalidateSize();
+            }
+        }
     }
-    
-    if (btnOpenMap) btnOpenMap.addEventListener('click', abrirMapaMapbox);
-    if (cardOpenMap) cardOpenMap.addEventListener('click', abrirMapaMapbox);
+
+    if (btnOpenMap) btnOpenMap.addEventListener('click', abrirMapaSegunPreferencia);
+    if (cardOpenMap) cardOpenMap.addEventListener('click', abrirMapaSegunPreferencia);
 
     if (btnBackGarage) {  
         btnBackGarage.addEventListener('click', () => {  
