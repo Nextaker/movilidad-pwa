@@ -5,18 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Overdrive</title>
     
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Mapbox GL CSS -->
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css' rel='stylesheet' />
     
     <!-- Estilos exactos HUD -->
     <link rel="stylesheet" href="style.css">
 
     <link rel="manifest" href="manifest.json">
-
-    <!-- Mapbox GL CSS -->
-<link href='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css' rel='stylesheet' />
-<!-- Mapbox GL JS -->
-<script src='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js'></script>
 </head>
 <body>
 <div id="orientation-warning" class="orientation-overlay">
@@ -30,11 +25,11 @@
     <!-- VISTA 1: EL GARAJE HUD (DASHBOARD) -->
     <div id="garage-view" class="garage-container">
         
-        <!-- HUD Superior Holográfico Limpio (Sin botón de edición) -->
+        <!-- HUD Superior Holográfico Limpio -->
         <header class="hud-header">
             <div class="hud-left">
                 <div class="hud-avatar-container">
-                  <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" alt="Avatar" class="hud-avatar">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" alt="Avatar" class="hud-avatar">
                 </div>
                 <div class="hud-info-block">
                     <!-- LÍNEA 1: Saludo, Coche y Estado -->
@@ -78,89 +73,84 @@
         <div class="garage-stage">
 
             <!-- CARRUSEL HUD 3D ENVOLVENTE -->
-    <div class="cyber-carousel">
-        <div class="cyber-card" id="card-open-map">
-            <div class="cyber-card-icon">🗺️</div>
-            <div class="cyber-card-title">MAPA</div>
-            <div class="cyber-card-sub">LIVE GPS</div>
-        </div>
+            <div class="cyber-carousel">
+                <div class="cyber-card" id="card-open-map">
+                    <div class="cyber-card-icon">🗺️</div>
+                    <div class="cyber-card-title">MAPA</div>
+                    <div class="cyber-card-sub">LIVE GPS</div>
+                </div>
 
-        <div class="cyber-card" id="card-open-player">
-            <div class="cyber-card-icon">🎵</div>
-            <div class="cyber-card-title">MÚSICA</div>
-            <div class="cyber-card-sub">AUDIO HUD</div>
-        </div>
+                <div class="cyber-card" id="card-open-player">
+                    <div class="cyber-card-icon">🎵</div>
+                    <div class="cyber-card-title">MÚSICA</div>
+                    <div class="cyber-card-sub">AUDIO HUD</div>
+                </div>
 
-        <div class="cyber-card" id="card-open-favorites">
-            <div class="cyber-card-icon">⭐</div>
-            <div class="cyber-card-title">FAVORITOS</div>
-            <div class="cyber-card-sub">ACCESOS</div>
-        </div>
+                <div class="cyber-card" id="card-open-favorites">
+                    <div class="cyber-card-icon">⭐</div>
+                    <div class="cyber-card-title">FAVORITOS</div>
+                    <div class="cyber-card-sub">ACCESOS</div>
+                </div>
 
-        <div class="cyber-card" id="card-open-ads">
-            <div class="cyber-card-icon">📢</div>
-            <div class="cyber-card-title">ANUNCIOS</div>
-            <div class="cyber-card-sub">PATROCINIOS</div>
+                <div class="cyber-card" id="card-open-ads">
+                    <div class="cyber-card-icon">📢</div>
+                    <div class="cyber-card-title">ANUNCIOS</div>
+                    <div class="cyber-card-sub">PATROCINIOS</div>
+                </div>
+            </div>
         </div>
-    </div>
-        
-        
         
         <!-- HUD INFERIOR Y CARRUSEL DE TARJETAS -->
-<footer class="hud-footer-container" style="display: flex; flex-direction: column; align-items: center; width: 100%; padding: 10px;">
-    
-
-    <!-- BOTONES PRINCIPALES INFERIORES -->
-    <div class="hud-buttons-row" style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 10px;">
-        <button class="cyber-btn" id="btn-open-map">🚀 INICIAR MAPA DE BOMBAS</button>
-        <button class="cyber-btn" id="btn-open-modal">⚙️ CONFIG VEHÍCULO</button>
-    </div>
-    
-</footer>
+        <footer class="hud-footer-container">
+            <!-- BOTONES PRINCIPALES INFERIORES -->
+            <div class="hud-buttons-row">
+                <button class="cyber-btn" id="btn-open-map">🚀 INICIAR MAPA DE BOMBAS</button>
+                <button class="cyber-btn" id="btn-open-modal">⚙️ CONFIG VEHÍCULO</button>
+            </div>
+        </footer>
 
     </div>
 
     <!-- VISTA 2: EL MAPA EN VIVO -->
     <div id="map-view">
-        <button class="neon-btn back-to-garage" id="btn-back-garage">⬅️Volver</button>
+        <button class="neon-btn back-to-garage" id="btn-back-garage">⬅️ Volver</button>
         <div id="map" style="height: 100%; width: 100%;"></div>
     </div>
-    <!-- MODAL SELECTOR DE VEHÍCULO (CATÁLOGO PROFESIONAL) -->
-<div id="car-modal" class="modal-overlay">
-    <div class="modal-content">
-        <h3>Configuración del Garaje</h3>
-        
-        <div class="form-group">
-            <label for="select-car-model">Seleccionar Vehículo del Catálogo</label>
-            <select id="select-car-model" class="custom-select">
-                <option value="fiat_palio">Fiat Palio 1.8 (1.8 L)</option>
-                <option value="chevrolet_aveo">Chevrolet Aveo Speed (1.5 L)</option>
-                <option value="toyota_corolla">Toyota Corolla (1.8 L)</option>
-                <option value="chevrolet_optra">Chevrolet Optra Limited (1.8 L)</option>
-            </select>
-        </div>
 
-        <!-- SELECTOR DE COLOR / ACABADO -->
-        <div class="form-group" style="margin-top: 15px;">
-            <label>Acabado / Color del Vehículo</label>
-            <div class="color-selector-row" style="display: flex; gap: 12px; margin-top: 8px;">
-                <button type="button" class="color-btn" data-color="rojo" style="background: #ff2a2a; width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; box-shadow: 0 0 10px rgba(255,42,42,0.5);" title="Rojo"></button>
-                <button type="button" class="color-btn" data-color="negro" style="background: #111111; width: 35px; height: 35px; border-radius: 50%; border: 2px solid #00f0ff; cursor: pointer; box-shadow: 0 0 10px rgba(0,240,255,0.5);" title="Negro"></button>
-                <button type="button" class="color-btn" data-color="gris" style="background: #aaaaaa; width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; box-shadow: 0 0 10px rgba(170,170,170,0.5);" title="Gris / Plateado"></button>
+    <!-- MODAL SELECTOR DE VEHÍCULO -->
+    <div id="car-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Configuración del Garaje</h3>
+            
+            <div class="form-group">
+                <label for="select-car-model">Seleccionar Vehículo del Catálogo</label>
+                <select id="select-car-model" class="custom-select">
+                    <option value="fiat_palio">Fiat Palio 1.8 (1.8 L)</option>
+                    <option value="chevrolet_aveo">Chevrolet Aveo Speed (1.5 L)</option>
+                    <option value="toyota_corolla">Toyota Corolla (1.8 L)</option>
+                    <option value="chevrolet_optra">Chevrolet Optra Limited (1.8 L)</option>
+                </select>
+            </div>
+
+            <!-- SELECTOR DE COLOR / ACABADO -->
+            <div class="form-group" style="margin-top: 15px;">
+                <label>Acabado / Color del Vehículo</label>
+                <div class="color-selector-row" style="display: flex; gap: 12px; margin-top: 8px;">
+                    <button type="button" class="color-btn" data-color="rojo" style="background: #ff2a2a; width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; cursor: pointer;" title="Rojo"></button>
+                    <button type="button" class="color-btn" data-color="negro" style="background: #111111; width: 35px; height: 35px; border-radius: 50%; border: 2px solid #00f0ff; cursor: pointer;" title="Negro"></button>
+                    <button type="button" class="color-btn" data-color="gris" style="background: #aaaaaa; width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; cursor: pointer;" title="Gris"></button>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button class="neon-btn primary" id="btn-save-car">Guardar Cambios</button>
+                <button class="neon-btn" id="btn-close-modal">Cancelar</button>
             </div>
         </div>
-
-        <div class="modal-actions" style="margin-top: 20px;">
-            <button class="neon-btn primary" id="btn-save-car">Guardar Cambios</button>
-            <button class="neon-btn" id="btn-close-modal">Cancelar</button>
-        </div>
     </div>
-</div>
 
-    <!-- Leaflet JS & Supabase CDN -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Mapbox GL JS -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js'></script>
     <script type="module" src="js/main.js"></script>
-    <!-- Librería para renderizado y control 3D interactivo -->
-<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 </body>
 </html>
