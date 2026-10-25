@@ -1,4 +1,4 @@
-// js/main.js - Controlador Principal Overdrive (Mapbox GL Native)  
+// js/main.js - Controlador Principal Overdrive (Mapbox GL)  
 import { supabase } from './services/supabaseClient.js';  
   
 document.addEventListener('DOMContentLoaded', () => {  
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });  
     }  
   
-    // --- 2. CATÁLOGO DE VEHÍCULOS CON FONDOS COMPLETOS Y COLORES ---  
+    // --- 2. CATÁLOGO DE VEHÍCULOS ---  
     const carCatalog = {  
         'fiat_palio': {  
             name: 'Fiat Palio 1.8',  
@@ -79,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentColor = localStorage.getItem('user_car_color') || 'rojo';
 
-    // Función para aplicar garaje completo y color seleccionado
     document.querySelectorAll('.color-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             currentColor = e.target.getAttribute('data-color');
@@ -108,33 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }  
     }
   
-    // --- 3. NAVEGACIÓN VISTAS Y MAPA ---  
-    let mapInitialized = false;  
-    let map;  
-  
-    if (btnOpenMap) {  
-        btnOpenMap.addEventListener('click', () => {  
-            if (garageView) garageView.style.display = 'none';  
-            if (mapView) mapView.style.display = 'block';  
-  
-            if (!mapInitialized) {  
-                initMap();  
-                mapInitialized = true;  
-            } else if (map) {  
-                map.resize(); // Reajustar contenedor de Mapbox al cambiar de vista
-                detectarUbicacionUsuarioMapbox();
-            }  
-        });  
-    }  
-  
-    if (btnBackGarage) {  
-        btnBackGarage.addEventListener('click', () => {  
-            if (mapView) mapView.style.display = 'none';  
-            if (garageView) garageView.style.display = 'flex';  
-        });  
-    }  
-  
-    // --- 4. MODAL ---  
+    // --- MODAL ---  
     if (btnOpenModal) {  
         btnOpenModal.addEventListener('click', () => {  
             if (carModal) carModal.style.display = 'flex';  
@@ -155,7 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });  
     }  
   
-    // Cargar Preferencia Inicial  
     const savedCarKey = localStorage.getItem('user_car_key') || 'fiat_palio';  
     const savedColor = localStorage.getItem('user_car_color') || 'rojo';
     applyVehicleGarage(savedCarKey, savedColor);  
@@ -171,132 +143,59 @@ document.addEventListener('DOMContentLoaded', () => {
         });  
     }     
 
-    // --- MAPA MAPBOX GL NATIVO (Estilo Standard-Satellite) ---  
+    // --- 3. NAVEGACIÓN Y MAPBOX GL ---  
+    let mapInitialized = false;  
+    let map;  
+    let userMarker = null;
+
     function initMap() {  
         mapboxgl.accessToken = 'pk.eyJ1IjoibmV4dGFrZXIiLCJhIjoiY212NWxiN2Z4MDdpMTJ6b2cxeWQ3cjcwOSJ9.TI4OWazCfVGC0-rlCwkA2w';
 
-        // Mapbox utiliza formato [longitud, latitud]
+        // Mapbox usa [lng, lat]
         const puntoFijoCoords = [-70.1333, 11.7167];  
 
         map = new mapboxgl.Map({  
-            container: 'map', // ID del div en el HTML
-            style: 'mapbox://styles/mapbox/standard-satellite', // Estilo satelital inmersivo
+            container: 'map',  
+            style: 'mapbox://styles/mapbox/standard-satellite',  
             center: puntoFijoCoords,  
             zoom: 13,
-            pitch: 30 // Inclinación ligera para darle profundidad 3D industrial
+            pitch: 30 
         });  
 
-        // Controles de navegación nativos de Mapbox (Zoom y orientación)
         map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-        // Agregar botón GPS manual flotante
-        agregarBotonGPSManualMapbox();
-
         map.on('load', () => {
+            console.log("Mapa de Mapbox cargado correctamente.");
             cargarEstacionesMapbox();
             detectarUbicacionUsuarioMapbox();
         });
     }
 
-    // Botón flotante personalizado para Mapbox
-    function agregarBotonGPSManualMapbox() {
-        const customControl = document.createElement('div');
-        customControl.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
-        customControl.innerHTML = `
-            <button title="Centrar GPS" style="
-                background: rgba(10, 16, 30, 0.95); 
-                color: #00f0ff; 
-                border: none; 
-                padding: 6px 10px; 
-                cursor: pointer; 
-                font-family: 'Orbitron', sans-serif;
-                font-weight: bold;
-                font-size: 11px;
-            ">📍 GPS</button>
-        `;
-        customControl.onclick = (e) => {
-            e.stopPropagation();
-            detectarUbicacionUsuarioMapbox(true);
-        };
-        
-        // Lo añadimos al control container de Mapbox
-        const controlContainer = document.querySelector('.mapboxgl-ctrl-top-right');
-        if (controlContainer) {
-            controlContainer.appendChild(customControl);
-        }
-    }
-
-    let userMarker = null;
-
-    function detectarUbicacionUsuarioMapbox(forzarAlta = false) {  
-        if (!("geolocation" in navigator)) {  
-            alert("Tu navegador móvil no soporta geolocalización.");
-            return;  
-        }
-
-        console.log("Solicitando geolocalización Mapbox...");
-
-        const opcionesGPS = {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 0
-        };
+    function detectarUbicacionUsuarioMapbox() {  
+        if (!("geolocation" in navigator)) return;  
 
         navigator.geolocation.getCurrentPosition(  
             (position) => {  
                 const userLat = position.coords.latitude;  
                 const userLng = position.coords.longitude;  
 
-                console.log(`GPS Mapbox OK -> Lat: ${userLat}, Lng: ${userLng}`);
+                map.flyTo({ center: [userLng, userLat], zoom: 15 });
 
-                // Volar suavemente hacia la posición actual
-                map.flyTo({ center: [userLng, userLat], zoom: 16 });
+                if (!userMarker) {
+                    const el = document.createElement('div');
+                    el.className = 'user-location-marker';
+                    el.innerHTML = '<div class="gps-pulse"></div>';
 
-                // Crear elemento visual para el marcador con pulso neón
-                const el = document.createElement('div');
-                el.className = 'user-location-marker';
-                el.innerHTML = '<div class="gps-pulse"></div>';
-
-                if (userMarker) {
-                    userMarker.setLngLat([userLng, userLat]);
-                } else {
                     userMarker = new mapboxgl.Marker(el)
                         .setLngLat([userLng, userLat])
                         .setPopup(new mapboxgl.Popup().setHTML("<b>¡Tu Ubicación Actual!</b>"))
                         .addTo(map);
+                } else {
+                    userMarker.setLngLat([userLng, userLat]);
                 }
             },  
-            (error) => {  
-                console.warn("Error GPS Mapbox:", error.code, error.message);
-                
-
-                navigator.geolocation.getCurrentPosition(
-                    (posFallback) => {
-                        const lat = posFallback.coords.latitude;
-                        const lng = posFallback.coords.longitude;
-                        
-                        map.flyTo({ center: [lng, lat], zoom: 15 });
-
-                        const el = document.createElement('div');
-                        el.className = 'user-location-marker';
-                        el.innerHTML = '<div class="gps-pulse"></div>';
-
-                        if (userMarker) {
-                            userMarker.setLngLat([lng, lat]);
-                        } else {
-                            userMarker = new mapboxgl.Marker(el)
-                                .setLngLat([lng, lat])
-                                .setPopup(new mapboxgl.Popup().setHTML("<b>¡Ubicación Aproximada!</b>"))
-                                .addTo(map);
-                        }
-                    },
-                    (errFallback) => {
-                        console.error("Error Fallback:", errFallback.message);
-                    },
-                    { enableHighAccuracy: false, timeout: 10000 }
-                );
-            },  
-            opcionesGPS  
+            (error) => console.warn("Error GPS:", error.message),  
+            { enableHighAccuracy: true, timeout: 10000 }  
         );  
     }
 
@@ -318,34 +217,63 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (station.status === 'closed') { estadoTexto = "CERRADA"; colorEstado = "#ff0055"; }
                     if (station.status === 'no_fuel') { estadoTexto = "SIN COMBUSTIBLE"; colorEstado = "#ffaa00"; }
   
-                    // Contenedor principal del marcador (Diamante + Tarjeta HUD fija)
                     const el = document.createElement('div');
                     el.className = 'cyber-station-marker';
                     el.innerHTML = `
-                        <div class="diamond-pin"></div>
-                        <div class="hud-station-card">
-                            <div class="hud-station-title">${station.name}</div>
-                            <div class="hud-station-status">ESTADO: <span style="color: ${colorEstado}; font-weight: bold;">${estadoTexto}</span></div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="diamond-pin"></div>
+                            <div class="hud-station-card">
+                                <div class="hud-station-title">${station.name}</div>
+                                <div class="hud-station-status">ESTADO: <span style="color: ${colorEstado}; font-weight: bold;">${estadoTexto}</span></div>
+                            </div>
                         </div>
-                    `;  
-  
-                    // Añadir marcador a Mapbox con anclaje superior para que la tarjeta quede debajo del diamante
-                    new mapboxgl.Marker({ element: el, anchor: 'top' })
+                    `;
+
+                    const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+                        <b>${station.name}</b><br>Estado: ${estadoTexto}
+                    `);
+
+                    new mapboxgl.Marker(el)
                         .setLngLat([station.longitude, station.latitude])
+                        .setPopup(popup)
                         .addTo(map);
                 });  
             }  
         } catch (err) {  
-            console.error('Error de red al conectar con Supabase:', err);  
+            console.error('Error Supabase:', err);  
         }  
-    
-    }  
+    }
 
-    // --- REPRODUCTOR DE MÚSICA AMBIENTAL HUD ---
+    // Apertura de vista de mapa con redimensionamiento seguro
+    const cardOpenMap = document.getElementById('card-open-map');
+
+    function abrirMapaMapbox() {
+        if (garageView) garageView.style.display = 'none';  
+        if (mapView) mapView.style.display = 'block';  
+
+        if (!mapInitialized) {  
+            initMap();  
+            mapInitialized = true;  
+        } else if (map) {  
+            setTimeout(() => {
+                map.resize();
+                detectarUbicacionUsuarioMapbox();
+            }, 150);
+        }  
+    }
+    
+    if (btnOpenMap) btnOpenMap.addEventListener('click', abrirMapaMapbox);
+    if (cardOpenMap) cardOpenMap.addEventListener('click', abrirMapaMapbox);
+
+    if (btnBackGarage) {  
+        btnBackGarage.addEventListener('click', () => {  
+            if (mapView) mapView.style.display = 'none';  
+            if (garageView) garageView.style.display = 'flex';  
+        });  
+    }
+
+    // --- REPRODUCTOR DE MÚSICA HUD ---
     function inicializarReproductorHUD() {
-        const hudContainer = document.querySelector('.garage-container') || document.body;
-        
-        // Creamos un widget flotante discreto para la música
         const musicWidget = document.createElement('div');
         musicWidget.innerHTML = `
             <div id="hud-audio-player" style="
@@ -379,11 +307,9 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         document.body.appendChild(musicWidget);
 
-        // Audio de fondo suave (Ejemplo de pista libre de tipo synthwave/lofi ambiental)
-        // Puedes cambiar la URL por un archivo .mp3 alojado en tu carpeta 'assets/audio/'
         const audio = new Audio('./assets/audio/cyberpunk-bg.mp3');
         audio.loop = true;
-        audio.volume = 0.3; // Volumen moderado y suave
+        audio.volume = 0.3;
 
         const btnToggle = document.getElementById('btn-toggle-audio');
         let isPlaying = false;
@@ -395,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     btnToggle.textContent = 'MUTE';
                     btnToggle.style.background = '#ff0055';
                     btnToggle.style.color = '#fff';
-                }).catch(err => console.log("Bloqueo de audio por navegador:", err));
+                }).catch(err => console.log("Bloqueo de audio:", err));
             } else {
                 audio.pause();
                 isPlaying = false;
@@ -406,8 +332,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Llamar a la función al iniciar el DOM principal
     inicializarReproductorHUD();
 });
-
-
