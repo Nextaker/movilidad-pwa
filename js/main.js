@@ -1,8 +1,8 @@
-// js/main.js - Controlador Principal Overdrive (Híbrido Mapbox GL / Leaflet)  
+// js/main.js - Controlador Principal Overdrive (Versión Consumidor / Usuario)  
 import { supabase } from './services/supabaseClient.js';  
   
 document.addEventListener('DOMContentLoaded', () => {  
-    console.log("⚡ Overdrive HUD Inicializado");  
+    console.log("⚡ Overdrive HUD Inicializado (Usuario)");  
   
     // --- 1. ELEMENTOS DEL DOM ---  
     const garageView = document.getElementById('garage-view');  
@@ -144,122 +144,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });  
     }     
 
-    // --- 3. MOTORES DE MAPAS (MAPBOX GL & LEAFLET) ---  
+    // --- 3. GESTIÓN DE DOBLE MOTOR LEAFLET (Vector por defecto, Satélite secundario) ---  
     let mapInitialized = false;  
     let map = null;  
     let userMarker = null;
-    let currentEngine = localStorage.getItem('overdrive_map_engine') || 'mapbox';
+    let currentEngine = localStorage.getItem('overdrive_map_engine') || 'leaflet_vec'; // Vector por defecto
 
     const btnToggleEngine = document.getElementById('btn-toggle-engine');
     const engineLabel = document.getElementById('engine-label');
 
     if (btnToggleEngine && engineLabel) {
-        engineLabel.textContent = currentEngine === 'mapbox' ? 'Mapbox 3D' : 'Leaflet 2D';
+        engineLabel.textContent = currentEngine === 'leaflet_vec' ? 'Leaflet Vector' : 'Leaflet Satélite';
 
         btnToggleEngine.addEventListener('click', () => {
-            currentEngine = currentEngine === 'mapbox' ? 'leaflet' : 'mapbox';
+            currentEngine = currentEngine === 'leaflet_vec' ? 'leaflet_sat' : 'leaflet_vec';
             localStorage.setItem('overdrive_map_engine', currentEngine);
-            alert(`Cambiando motor a ${currentEngine.toUpperCase()}. Recargando interfaz...`);
+            alert(`Cambiando motor a ${currentEngine === 'leaflet_sat' ? 'Leaflet Satélite' : 'Leaflet Vector'}. Recargando...`);
             location.reload();
         });
     }
 
-    // --- INICIALIZADOR DE MAPBOX ---
-    function initMapbox() {  
-        mapboxgl.accessToken = 'pk.eyJ1IjoibmV4dGFrZXIiLCJhIjoiY212NWxiN2Z4MDdpMTJ6b2cxeWQ3cjcwOSJ9.TI4OWazCfVGC0-rlCwkA2w';
-
-        const puntoFijoCoords = [-70.1333, 11.7167];  
-
-        map = new mapboxgl.Map({  
-            container: 'map',  
-            style: 'mapbox://styles/mapbox/satellite-streets-v12',  
-            center: puntoFijoCoords,  
-            zoom: 13,
-            pitch: 0 
-        });
-
-        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-        map.on('load', () => {
-            console.log("Mapa de Mapbox inicializado correctamente.");
-            map.resize();
-            cargarEstacionesMapbox();
-            detectarUbicacionMapbox();
-        });
-    }
-
-    function detectarUbicacionMapbox() {  
-        if (!("geolocation" in navigator)) return;  
-
-        navigator.geolocation.getCurrentPosition(  
-            (position) => {  
-                const userLat = position.coords.latitude;  
-                const userLng = position.coords.longitude;  
-
-                if (map) map.flyTo({ center: [userLng, userLat], zoom: 15 });
-
-                if (!userMarker) {
-                    const el = document.createElement('div');
-                    el.className = 'user-location-marker';
-                    el.innerHTML = '<div class="gps-pulse"></div>';
-
-                    userMarker = new mapboxgl.Marker(el)
-                        .setLngLat([userLng, userLat])
-                        .setPopup(new mapboxgl.Popup().setHTML("<b>¡Tu Ubicación Actual!</b>"))
-                        .addTo(map);
-                } else {
-                    userMarker.setLngLat([userLng, userLat]);
-                }
-            },  
-            (error) => console.warn("Error GPS Mapbox:", error.message),  
-            { enableHighAccuracy: true, timeout: 10000 }  
-        );  
-    }
-
-    async function cargarEstacionesMapbox() {  
-        try {  
-            const { data: stations, error } = await supabase.from('gas_stations').select('*');  
-            if (error || !stations) return;  
-  
-            stations.forEach(station => {  
-                let estadoTexto = "OPERATIVA";  
-                let colorEstado = "#00ff66";
-                if (station.status === 'closed') { estadoTexto = "CERRADA"; colorEstado = "#ff0055"; }
-                if (station.status === 'no_fuel') { estadoTexto = "SIN COMBUSTIBLE"; colorEstado = "#ffaa00"; }
-
-                const el = document.createElement('div');
-                el.className = 'cyber-station-marker';
-                el.innerHTML = `
-                    <div style="display: flex; flex-direction: column; align-items: center;">
-                        <div class="diamond-pin"></div>
-                        <div class="hud-station-card">
-                            <div class="hud-station-title">${station.name}</div>
-                            <div class="hud-station-status">ESTADO: <span style="color: ${colorEstado}; font-weight: bold;">${estadoTexto}</span></div>
-                        </div>
-                    </div>
-                `;
-
-                new mapboxgl.Marker(el)
-                    .setLngLat([station.longitude, station.latitude])
-                    .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(`<b>${station.name}</b><br>Estado: ${estadoTexto}`))
-                    .addTo(map);
-            });  
-        } catch (err) {  
-            console.error('Error Supabase:', err);  
-        }  
-    }
-
-    // --- INICIALIZADOR DE LEAFLET ---
-    function initLeaflet() {
-        const puntoFijoCoords = [11.7167, -70.1333]; // Leaflet usa [lat, lng]
+    // --- INICIALIZADOR DE LEAFLET UNIFICADO ---
+    function initLeafletMap() {
+        const puntoFijoCoords = [11.7167, -70.1333]; // [lat, lng]
 
         map = L.map('map').setView(puntoFijoCoords, 13);
 
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '&copy; Esri World Imagery',
-            maxZoom: 19,
-            maxNativeZoom: 17
-        }).addTo(map);
+        if (currentEngine === 'leaflet_sat') {
+            // Capa Esri World Imagery (Satélite HD) - Opción Secundaria
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '&copy; Esri World Imagery',
+                maxZoom: 19,
+                maxNativeZoom: 17
+            }).addTo(map);
+        } else {
+            // Capa OpenStreetMap (Vectorial Limpia) - Opción por Defecto
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+        }
 
         cargarEstacionesLeaflet();
         detectarUbicacionLeaflet();
@@ -285,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     userMarker.setLatLng([userLat, userLng]);
                 } else {
                     userMarker = L.marker([userLat, userLng], { icon: pulseIcon }).addTo(map)
-                        .bindPopup("<b>¡Tu Ubicación Actual!</b>");
+                        .bindPopup("<b>¡Tu Ubicación Actual (GPS)!</b>");
                 }
             },
             (error) => console.warn("Error GPS Leaflet:", error.message),
@@ -321,9 +245,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 L.marker([station.latitude, station.longitude], { icon: stationIcon }).addTo(map);
             });
-        } catch (err) {
-            console.error('Error Supabase:', err);
-        }
+        } catch (err) {  
+            console.error('Error Supabase:', err);  
+        }  
     }
 
     // --- MANEJO DE NAVEGACIÓN DE VISTAS Y MAPA ---
@@ -332,18 +256,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mapView) mapView.style.display = 'block';  
 
         if (!mapInitialized) {  
-            if (currentEngine === 'mapbox') {
-                initMapbox();
-            } else {
-                initLeaflet();
-            }
+            initLeafletMap();
             mapInitialized = true;  
         } else if (map) {
-            if (currentEngine === 'mapbox') {
-                setTimeout(() => map.resize(), 150);
-            } else {
-                map.invalidateSize();
-            }
+            map.invalidateSize();
         }
     }
 

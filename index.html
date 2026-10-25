@@ -8,9 +8,6 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     
-    <!-- Mapbox GL CSS -->
-    <link href='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css' rel='stylesheet' />
-    
     <!-- Estilos exactos HUD -->
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
@@ -25,7 +22,7 @@
     </div>
 </div>
 
-    <!-- VISTA 1: EL GARAJE HUD (DASHBOARD) -->
+    <!-- VISTA 1: EL GARAJE HUD (DASHBOARD - VISTA USUARIO) -->
     <div id="garage-view" class="garage-container">
         
         <header class="hud-header">
@@ -68,8 +65,9 @@
             <p>Ofertas en neumáticos y lubricantes en Punto Fijo. Haz clic aquí.</p>
         </div>
 
+        <!-- ESCENARIO CENTRAL CON CUADRÍCULA TÁCTIL REEMPLAZANDO EL CARRUSEL -->
         <div class="garage-stage">
-            <div class="cyber-carousel">
+            <div class="cyber-grid-menu">
                 <div class="cyber-card" id="card-open-map">
                     <div class="cyber-card-icon">🗺️</div>
                     <div class="cyber-card-title">MAPA</div>
@@ -104,12 +102,12 @@
         </footer>
     </div>
 
-    <!-- VISTA 2: EL MAPA EN VIVO (CON CONTROLES FLOTANTES) -->
+    <!-- VISTA 2: EL MAPA EN VIVO -->
     <div id="map-view">
         <div style="position: absolute; top: 15px; left: 80px; z-index: 1000; display: flex; gap: 10px;">
             <button class="cyber-btn back-to-garage" id="btn-back-garage">⬅️ Volver</button>
-            <button class="cyber-btn " id="btn-toggle-engine" style="font-size: 11px; background: rgba(5,8,17,0.9); border: 1px solid #00f0ff; color: #00f0ff;">
-                ⚙️ Motor: <span id="engine-label">Mapbox 3D</span>
+            <button class="cyber-btn" id="btn-toggle-engine" style="font-size: 11px; background: rgba(5,8,17,0.9); border: 1px solid #00f0ff; color: #00f0ff;">
+                ⚙️ Motor: <span id="engine-label">Leaflet Vector</span>
             </button>
         </div>
         <div id="map" style="height: 100%; width: 100%;"></div>
@@ -146,8 +144,7 @@
         </div>
     </div>
 
-    <!-- Librerías JS de Mapbox y Leaflet -->
-    <script src='https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js'></script>
+    <!-- Librería JS de Leaflet -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script type="module" src="js/main.js"></script>
 </body>
