@@ -625,7 +625,183 @@ body, html {
 /* =========================================================
    ADAPTACIÓN MÓVIL EN MODO HORIZONTAL (LANDSCAPE) - AJUSTADO
    ========================================================= */
-@media screen and (max-height: 300px) and (orientation: landscape) {
+@media screen and (max-height: 350px) and (orientation: landscape) {
+    html, body { 
+        overflow-y: auto !important; 
+        position: relative !important; 
+        height: 100% !important; 
+    }
+
+    .garage-container {
+        padding: 5px 15px 42px 15px !important;
+        height: auto !important;
+        min-height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        gap: 4px !important;
+    }
+
+    .hud-header {
+        width: 100% !important;
+        padding: 4px 10px !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        transform: none !important;
+        margin-bottom: 0 !important;
+    }
+
+    .hud-left { gap: 8px !important; }
+    .hud-avatar-container { width: 26px !important; height: 26px !important; }
+    .hud-top-line { font-size: 0.5rem !important; }
+    .hud-metrics-row { gap: 6px !important; }
+    .metric-item span { font-size: 0.3rem !important; }
+    .metric-item strong { font-size: 0.55rem !important; }
+
+    .lab-toggle-btn {
+        padding: 2px 6px !important;
+        font-size: 7.5px !important;
+    }
+
+    .garage-stage {
+        position: relative !important;
+        top: auto !important; 
+        left: auto !important;
+        transform: none !important;
+        width: 100% !important; 
+        height: auto !important;
+        margin: 2px auto !important;
+    }
+
+    /* MODO CINTA 3D EN LANDSCAPE */
+    .cyber-carousel:not(.grid-mode) {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: center !important;
+        align-items: center !important;
+        position: relative !important;
+        width: 100% !important;
+        height: 135px !important;
+        overflow: visible !important;
+        perspective: 1000px !important;
+        gap: 0 !important;
+    }
+
+    .cyber-carousel:not(.grid-mode) .cyber-card {
+        display: flex !important;
+        position: absolute !important;
+        top: 50% !important;
+        padding: 6px 8px !important;
+        transition: transform 0.4s ease, opacity 0.4s ease, filter 0.4s ease !important;
+    }
+
+    .cyber-carousel:not(.grid-mode) .cyber-card.active {
+        left: 50% !important;
+        transform: translate(-50%, -50%) rotateY(0deg) scale(1) !important;
+        width: 145px !important;
+        height: 125px !important;
+        opacity: 1 !important;
+        filter: brightness(1) !important;
+        z-index: 40 !important;
+    }
+
+    .cyber-carousel:not(.grid-mode) .cyber-card.card-left {
+        left: 34% !important;
+        transform: translate(-50%, -50%) rotateY(25deg) scale(0.8) !important;
+        width: 120px !important;
+        height: 105px !important;
+        opacity: 0.5 !important;
+        filter: brightness(0.7) !important;
+        z-index: 25 !important;
+    }
+
+    .cyber-carousel:not(.grid-mode) .cyber-card.card-right {
+        left: 66% !important;
+        transform: translate(-50%, -50%) rotateY(-25deg) scale(0.8) !important;
+        width: 120px !important;
+        height: 105px !important;
+        opacity: 0.5 !important;
+        filter: brightness(0.7) !important;
+        z-index: 25 !important;
+    }
+
+    .cyber-carousel:not(.grid-mode) .cyber-card:not(.active):not(.card-left):not(.card-right) {
+        display: none !important;
+    }
+
+    .cyber-carousel:not(.grid-mode) .cyber-card .card-title { font-size: 8px !important; margin-bottom: 1px !important; }
+    .cyber-carousel:not(.grid-mode) .cyber-card .card-desc { font-size: 6px !important; line-height: 1 !important; }
+    .cyber-carousel:not(.grid-mode) .cyber-card .card-icon-box { width: 20px !important; height: 20px !important; }
+    .cyber-carousel:not(.grid-mode) .cyber-card .card-footer-action { font-size: 6px !important; padding-top: 2px !important; }
+
+    /* MODO CUADRÍCULA EN LANDSCAPE (Ocultamos el sponsor aquí para que no choque) */
+    .cyber-carousel.grid-mode {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+        max-width: 580px !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        height: auto !important;
+    }
+
+    .cyber-carousel.grid-mode .cyber-card {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        transform: none !important;
+        width: 100% !important;
+        height: 75px !important;
+        padding: 5px 6px !important;
+        opacity: 0.9 !important;
+        display: flex !important;
+    }
+
+    .cyber-carousel.grid-mode .cyber-card .card-title { font-size: 8px !important; }
+    .cyber-carousel.grid-mode .cyber-card .card-desc { font-size: 5.5px !important; }
+    .cyber-carousel.grid-mode .cyber-card .card-icon-box { width: 20px !important; height: 20px !important; }
+    .cyber-carousel.grid-mode .cyber-card:nth-child(5) { grid-column: span 1 !important; max-width: none !important; }
+
+    /* Ocultar el patrocinador solo en modo cuadrícula horizontal para evitar colisión */
+    .cyber-carousel.grid-mode ~ .wall-poster-sponsor,
+    .garage-container:has(.cyber-carousel.grid-mode) .wall-poster-sponsor {
+        display: none !important;
+    }
+
+    /* Mostrar patrocinador en cinta 3D landscape */
+    .wall-poster-sponsor {
+        display: block !important;
+        position: absolute !important;
+        top: 25% !important;
+        left: 10px !important;
+        width: 110px !important;
+        padding: 5px 6px !important;
+        z-index: 5 !important;
+        opacity: 0.85;
+    }
+    .wall-poster-sponsor h4 { font-size: 0.55rem !important; }
+    .wall-poster-sponsor p { font-size: 0.45rem !important; line-height: 1 !important; }
+    .wall-poster-sponsor span { font-size: 0.35rem !important; }
+
+    .carousel-nav-container { display: none !important; }
+
+    /* BARRA DE AUDIO FIJA ABAJO */
+    #hud-audio-player {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 32px !important;
+        z-index: 99999 !important;
+        border-radius: 0 !important;
+        box-shadow: 0 -3px 12px rgba(0, 240, 255, 0.3) !important;
+    }
+}
+
+/* =========================================================
+   ADAPTACIÓN MÓVIL EN MODO HORIZONTAL (LANDSCAPE) - AJUSTADO
+   ========================================================= */
+@media screen and (max-height: 600px) and (orientation: landscape) {
     html, body { 
         overflow-y: auto !important; 
         position: relative !important; 
