@@ -59,10 +59,13 @@
                 </div>
             </div>
 
-            <!-- SELECTOR DE MODO DE VISTA TIPO LAB -->
-            <div class="lab-mode-selector">
+            <!-- SELECTOR DE MODO DE VISTA TIPO LAB Y RECARGA -->
+            <div class="lab-mode-selector" style="display: flex; gap: 8px;">
                 <button class="lab-toggle-btn" id="btn-toggle-view" title="Cambiar Vista">
                     <span id="toggle-icon">🔲</span> <span id="toggle-text">Modo Cuadrícula</span>
+                </button>
+                <button class="lab-toggle-btn" id="btn-reload-app" title="Actualizar App" onclick="location.reload()">
+                    🔄 Recargar
                 </button>
             </div>
         </header>
@@ -81,7 +84,7 @@
                 <div class="cyber-card card-left" id="card-open-map">
                     <div class="card-top-bar">
                         <div class="card-icon-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
                         </div>
                         <span class="card-tag">GPS // 01</span>
                     </div>
@@ -99,7 +102,7 @@
                 <div class="cyber-card card-left" id="card-open-player">
                     <div class="card-top-bar">
                         <div class="card-icon-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6"/></svg>
                         </div>
                         <span class="card-tag">AUDIO // 02</span>
                     </div>
@@ -117,7 +120,7 @@
                 <div class="cyber-card active" id="card-open-favorites">
                     <div class="card-top-bar">
                         <div class="card-icon-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#00f0ff" stroke="#00f0ff" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                         </div>
                         <span class="card-tag">DATA // 03</span>
                     </div>
@@ -135,7 +138,7 @@
                 <div class="cyber-card card-right" id="card-open-modal">
                     <div class="card-top-bar">
                         <div class="card-icon-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                         </div>
                         <span class="card-tag">GARAJE // 04</span>
                     </div>
@@ -153,7 +156,7 @@
                 <div class="cyber-card card-right" id="card-open-ads">
                     <div class="card-top-bar">
                         <div class="card-icon-box">
-                            <span style="font-size: 11px; font-weight: bold; color: #00f0ff;">Ad</span>
+                            <span style="font-size: 11px; font-weight: bold; color: var(--hud-primary);">Ad</span>
                         </div>
                         <span class="card-tag">ADS // 05</span>
                     </div>
@@ -183,7 +186,7 @@
     <div id="map-view">
         <div style="position: absolute; top: 15px; left: 80px; z-index: 1000; display: flex; gap: 10px;">
             <button class="cyber-btn back-to-garage" id="btn-back-garage">⬅️ Volver</button>
-            <button class="cyber-btn" id="btn-toggle-engine" style="font-size: 11px; background: rgba(5,8,17,0.9); border: 1px solid #00f0ff; color: #00f0ff;">
+            <button class="cyber-btn" id="btn-toggle-engine" style="font-size: 11px; background: rgba(5,8,17,0.9); border: 1px solid var(--hud-primary); color: var(--hud-primary);">
                 ⚙️ Motor: <span id="engine-label">Leaflet Vector</span>
             </button>
         </div>
@@ -209,8 +212,16 @@
                 <label>Acabado / Color del Vehículo</label>
                 <div class="color-selector-row" style="display: flex; gap: 12px; margin-top: 8px;">
                     <button type="button" class="color-btn" data-color="rojo" style="background: #ff2a2a; width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; cursor: pointer;" title="Rojo"></button>
-                    <button type="button" class="color-btn" data-color="negro" style="background: #111111; width: 35px; height: 35px; border-radius: 50%; border: 2px solid #00f0ff; cursor: pointer;" title="Negro"></button>
+                    <button type="button" class="color-btn" data-color="negro" style="background: #111111; width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--hud-primary); cursor: pointer;" title="Negro"></button>
                     <button type="button" class="color-btn" data-color="gris" style="background: #aaaaaa; width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; cursor: pointer;" title="Gris"></button>
+                </div>
+                
+                <label style="margin-top: 12px; display: block;">Tema Global de la App</label>
+                <div class="theme-selector" style="display: flex; gap: 8px; margin-top: 5px; flex-wrap: wrap;">
+                    <button type="button" onclick="cambiarTemaGlobal('cyan')" style="background:#00f0ff; color:#050811; border:none; padding:5px 10px; cursor:pointer; font-weight:bold; border-radius:4px;">Cyber Cyan</button>
+                    <button type="button" onclick="cambiarTemaGlobal('purple')" style="background:#bf00ff; color:#fff; border:none; padding:5px 10px; cursor:pointer; font-weight:bold; border-radius:4px;">Púrpura Neón</button>
+                    <button type="button" onclick="cambiarTemaGlobal('emerald')" style="background:#00ffcc; color:#050811; border:none; padding:5px 10px; cursor:pointer; font-weight:bold; border-radius:4px;">Esmeralda</button>
+                    <button type="button" onclick="cambiarTemaGlobal('gold')" style="background:#ffcc00; color:#050811; border:none; padding:5px 10px; cursor:pointer; font-weight:bold; border-radius:4px;">Cyber Gold</button>
                 </div>
             </div>
 

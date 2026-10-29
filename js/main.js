@@ -16,26 +16,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const displayCarName = document.getElementById('display-car-name');  
     const garageContainer = document.querySelector('.garage-container'); 
 
-    // Botón Toggle para alternar entre Cinta 3D y Cuadrícula
+    // --- 1.1 PERSISTENCIA DE MODO (Cinta 3D vs Cuadrícula) ---
     const btnToggleView = document.getElementById('btn-toggle-view');
     const toggleIcon = document.getElementById('toggle-icon');
     const toggleText = document.getElementById('toggle-text');
     const carousel = document.getElementById('cyber-carousel');
-    let isGridMode = false;
+    
+    let savedGridMode = localStorage.getItem('overdrive_grid_mode') === 'true';
+
+    function aplicarModoVista(isGrid) {
+        if (!carousel) return;
+        if (isGrid) {
+            carousel.classList.add('grid-mode');
+            if (toggleIcon) toggleIcon.textContent = '⚙️';
+            if (toggleText) toggleText.textContent = 'Modo Cinta 3D';
+        } else {
+            carousel.classList.remove('grid-mode');
+            if (toggleIcon) toggleIcon.textContent = '🔲';
+            if (toggleText) toggleText.textContent = 'Modo Cuadrícula';
+        }
+        localStorage.setItem('overdrive_grid_mode', isGrid);
+    }
+
+    aplicarModoVista(savedGridMode);
 
     if (btnToggleView && carousel) {
         btnToggleView.addEventListener('click', () => {
-            isGridMode = !isGridMode;
-            if (isGridMode) {
-                carousel.classList.add('grid-mode');
-                if (toggleIcon) toggleIcon.textContent = '⚙️';
-                if (toggleText) toggleText.textContent = 'Modo Cinta 3D';
-            } else {
-                carousel.classList.remove('grid-mode');
-                if (toggleIcon) toggleIcon.textContent = '🔲';
-                if (toggleText) toggleText.textContent = 'Modo Cuadrícula';
-            }
+            savedGridMode = !savedGridMode;
+            aplicarModoVista(savedGridMode);
         });
+    }
+
+    // --- 1.2 GESTIÓN DE TEMAS GLOBALES DE LA APLICACIÓN ---
+    const savedTheme = localStorage.getItem('overdrive_theme') || 'cyan';
+    aplicarTemaGlobal(savedTheme);
+
+    window.cambiarTemaGlobal = function(themeName) {
+        localStorage.setItem('overdrive_theme', themeName);
+        aplicarTemaGlobal(themeName);
+    }
+
+    function aplicarTemaGlobal(theme) {
+        document.body.classList.remove('theme-cyan', 'theme-purple', 'theme-gold', 'theme-emerald');
+        document.body.classList.add(`theme-${theme}`);
     }
 
     // --- 2. CATÁLOGO VEHÍCULOS ---  
@@ -251,35 +274,28 @@ document.addEventListener('DOMContentLoaded', () => {
             audio.play().then(() => {
                 isPlaying = true;
                 btnToggle.textContent = 'PAUSE';
-                btnToggle.style.background = '#ff0055';
+                btnToggle.style.background = 'var(--hud-accent)';
                 btnToggle.style.color = '#fff';
-                btnToggle.style.boxShadow = '0 0 12px #ff0055';
-            }).catch(err => console.log("Bloqueo de autoplay por políticas del navegador:", err));
+                btnToggle.style.boxShadow = '0 0 12px var(--hud-accent)';
+            }).catch(err => console.log("Bloqueo de autoplay:", err));
         }
 
         function pausarAudio() {
             audio.pause();
             isPlaying = false;
             btnToggle.textContent = 'PLAY';
-            btnToggle.style.background = '#00f0ff';
+            btnToggle.style.background = 'var(--hud-primary)';
             btnToggle.style.color = '#050811';
-            btnToggle.style.boxShadow = '0 0 10px rgba(0, 240, 255, 0.5)';
+            btnToggle.style.boxShadow = '0 0 10px var(--hud-primary)';
         }
 
         btnToggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (!isPlaying) {
-                reproducirAudio();
-            } else {
-                pausarAudio();
-            }
+            if (!isPlaying) { reproducirAudio(); } else { pausarAudio(); }
         });
 
-        // Desbloquear y reproducir automáticamente en cuanto el usuario haga su primer toque/clic en pantalla
         const desbloquearAudioAlPrimerToque = () => {
-            if (!isPlaying) {
-                reproducirAudio();
-            }
+            if (!isPlaying) { reproducirAudio(); }
             window.removeEventListener('pointerdown', desbloquearAudioAlPrimerToque);
             window.removeEventListener('touchstart', desbloquearAudioAlPrimerToque);
         };
@@ -290,30 +306,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     inicializarReproductorHUD();
 
-    // --- 5. LÓGICA DE ROTACIÓN 3D, NAVEGACIÓN Y GESTOS TÁCTILES (SWIPE) ---
+    // --- 5. LÓGICA DE ROTACIÓN 3D, NAVEGACIÓN Y GESTOS TÁCTILES ---
     const cards = Array.from(document.querySelectorAll('.cyber-card'));
     const btnPrev = document.getElementById('btn-prev-card');
     const btnNext = document.getElementById('btn-next-card');
-    let activeIndex = 2; // Inicia en Favoritos (índice 2)
+    let activeIndex = 2;
 
     function actualizarAngulosTransicion(index) {
-        if (index < 0) {
-            activeIndex = 0;
-        } else if (index >= cards.length) {
-            activeIndex = cards.length - 1;
-        } else {
-            activeIndex = index;
-        }
+        if (index < 0) { activeIndex = 0; }
+        else if (index >= cards.length) { activeIndex = cards.length - 1; }
+        else { activeIndex = index; }
 
         cards.forEach((card, idx) => {
             card.classList.remove('active', 'card-left', 'card-right');
-            if (idx === activeIndex) {
-                card.classList.add('active');
-            } else if (idx < activeIndex) {
-                card.classList.add('card-left');
-            } else {
-                card.classList.add('card-right');
-            }
+            if (idx === activeIndex) { card.classList.add('active'); }
+            else if (idx < activeIndex) { card.classList.add('card-left'); }
+            else { card.classList.add('card-right'); }
         });
     }
 
@@ -322,18 +330,13 @@ document.addEventListener('DOMContentLoaded', () => {
     cards.forEach((card, idx) => {
         card.addEventListener('click', () => {
             if (idx === activeIndex) {
-                if (card.id === 'card-open-map') {
-                    abrirMapaSegunPreferencia();
-                } else if (card.id === 'card-open-player') {
+                if (card.id === 'card-open-map') { abrirMapaSegunPreferencia(); }
+                else if (card.id === 'card-open-player') {
                     const btnToggle = document.getElementById('btn-toggle-audio');
                     if (btnToggle) btnToggle.click();
-                } else if (card.id === 'card-open-favorites') {
-                    alert("Panel de Favoritos.");
-                } else if (card.id === 'card-open-modal') {
-                    if (carModal) carModal.style.display = 'flex';
-                } else if (card.id === 'card-open-ads') {
-                    alert("Espacio Publicitario.");
-                }
+                } else if (card.id === 'card-open-favorites') { alert("Panel de Favoritos."); }
+                else if (card.id === 'card-open-modal') { if (carModal) carModal.style.display = 'flex'; }
+                else if (card.id === 'card-open-ads') { alert("Espacio Publicitario."); }
                 return;
             }
             actualizarAngulosTransicion(idx);
@@ -342,21 +345,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnNext) {
         btnNext.addEventListener('click', () => {
-            if (activeIndex < cards.length - 1) {
-                actualizarAngulosTransicion(activeIndex + 1);
-            }
+            if (activeIndex < cards.length - 1) { actualizarAngulosTransicion(activeIndex + 1); }
         });
     }
 
     if (btnPrev) {
         btnPrev.addEventListener('click', () => {
-            if (activeIndex > 0) {
-                actualizarAngulosTransicion(activeIndex - 1);
-            }
+            if (activeIndex > 0) { actualizarAngulosTransicion(activeIndex - 1); }
         });
     }
 
-    // --- SOPORTE TÁCTIL (SWIPE / DESLIZAR CON EL DEDO) ---
+    // --- SOPORTE TÁCTIL (SWIPE) ---
     let touchStartX = 0;
     let touchEndX = 0;
     const carouselStage = document.querySelector('.garage-stage');
@@ -375,14 +374,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleSwipeGesture() {
         const swipeThreshold = 40;
         if (touchEndX < touchStartX - swipeThreshold) {
-            if (activeIndex < cards.length - 1) {
-                actualizarAngulosTransicion(activeIndex + 1);
-            }
+            if (activeIndex < cards.length - 1) { actualizarAngulosTransicion(activeIndex + 1); }
         }
         if (touchEndX > touchStartX + swipeThreshold) {
-            if (activeIndex > 0) {
-                actualizarAngulosTransicion(activeIndex - 1);
-            }
+            if (activeIndex > 0) { actualizarAngulosTransicion(activeIndex - 1); }
         }
     }
 });
