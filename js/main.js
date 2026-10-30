@@ -1,114 +1,178 @@
-// js/main.js - Controlador Principal Overdrive  
-import { supabase } from './services/supabaseClient.js';  
-  
-document.addEventListener('DOMContentLoaded', () => {  
-    console.log("⚡ Overdrive HUD Inicializado");  
-  
-    // --- 1. ELEMENTOS DOM ---  
-    const garageView = document.getElementById('garage-view');  
-    const mapView = document.getElementById('map-view');  
-    const btnBackGarage = document.getElementById('btn-back-garage');  
-  
-    const carModal = document.getElementById('car-modal');  
-    const btnCloseModal = document.getElementById('btn-close-modal');  
-    const btnSaveCar = document.getElementById('btn-save-car');  
-    const selectCarModel = document.getElementById('select-car-model');  
-    const displayCarName = document.getElementById('display-car-name');  
-    const garageContainer = document.querySelector('.garage-container'); 
+// js/main.js - Orquestador Principal Overdrive & Carrusel 3D
+import { storageService } from './services/storageService.js';
+import { mapService } from './services/mapService.js';
+import { themeUI } from './ui/themeUI.js';
+import { audioPlayerUI } from './ui/audioPlayerUI.js';
+import { authUI } from './ui/authUI.js';
+import { garageUI } from './ui/garageUI.js';
+import { CAR_CATALOG } from './config.js';
+import { bootUI } from './ui/bootUI.js';
 
-    // --- 1.1 PERSISTENCIA DE MODO (Cinta 3D vs Cuadrícula) ---
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("⚡ Overdrive HUD Modular Inicializado");
+
+    // 1. Inicializar Módulos de UI
+    themeUI.init();
+    audioPlayerUI.init();
+    authUI.init();
+    garageUI.init();
+    bootUI.init();
+
+    // 2. Elementos DOM
+    const garageView = document.getElementById('garage-view');
+    const mapView = document.getElementById('map-view');
+    const btnBackGarage = document.getElementById('btn-back-garage');
     const btnToggleView = document.getElementById('btn-toggle-view');
-    const toggleIcon = document.getElementById('toggle-icon');
+    const toggleSvgIcon = document.getElementById('toggle-svg-icon');
     const toggleText = document.getElementById('toggle-text');
     const carousel = document.getElementById('cyber-carousel');
-    
-    let savedGridMode = localStorage.getItem('overdrive_grid_mode') === 'true';
+    const btnSyncData = document.getElementById('btn-sync-data');
+    const displayCarName = document.getElementById('display-car-name');
+    const garageContainer = document.querySelector('.garage-container');
 
-    function aplicarModoVista(isGrid) {
+    const btnPrev = document.getElementById('btn-prev-card');
+    const btnNext = document.getElementById('btn-next-card');
+    const btnBackMain = document.getElementById('btn-back-main');
+
+    const mainCards = Array.from(document.querySelectorAll('.main-menu-card'));
+    const garageSubCards = Array.from(document.querySelectorAll('.garage-sub-card'));
+
+    let currentMenuState = 'MAIN';
+    let activeIndex = 2;
+    let isGrid = storageService.getGridMode();
+
+    function aplicarModoVista(gridState) {
         if (!carousel) return;
-        if (isGrid) {
+        if (gridState && currentMenuState === 'MAIN') {
             carousel.classList.add('grid-mode');
-            if (toggleIcon) toggleIcon.textContent = '⚙️';
-            if (toggleText) toggleText.textContent = 'Modo Cinta 3D';
+            if (toggleSvgIcon) {
+                toggleSvgIcon.innerHTML = `
+                    <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
+                    <line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>
+                    <line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line>
+                    <line x1="17" y1="16" x2="23" y2="16"></line>
+                `;
+            }
+            if (toggleText) toggleText.textContent = 'Cinta 3D';
         } else {
             carousel.classList.remove('grid-mode');
-            if (toggleIcon) toggleIcon.textContent = '🔲';
-            if (toggleText) toggleText.textContent = 'Modo Cuadrícula';
+            if (toggleSvgIcon) {
+                toggleSvgIcon.innerHTML = `
+                    <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
+                `;
+            }
+            if (toggleText) toggleText.textContent = 'Cuadrícula';
         }
-        localStorage.setItem('overdrive_grid_mode', isGrid);
+        storageService.setGridMode(gridState);
     }
 
-    aplicarModoVista(savedGridMode);
+    aplicarModoVista(isGrid);
 
-    if (btnToggleView && carousel) {
+    if (btnToggleView) {
         btnToggleView.addEventListener('click', () => {
-            savedGridMode = !savedGridMode;
-            aplicarModoVista(savedGridMode);
+            if (currentMenuState === 'MAIN') {
+                isGrid = !isGrid;
+                aplicarModoVista(isGrid);
+            }
         });
     }
 
-    // --- 1.2 GESTIÓN DE TEMAS GLOBALES DE LA APLICACIÓN ---
-    const savedTheme = localStorage.getItem('overdrive_theme') || 'cyan';
-    aplicarTemaGlobal(savedTheme);
+    function renderCarousel() {
+        const activeCards = currentMenuState === 'MAIN' ? mainCards : garageSubCards;
 
-    window.cambiarTemaGlobal = function(themeName) {
-        localStorage.setItem('overdrive_theme', themeName);
-        aplicarTemaGlobal(themeName);
+        activeCards.forEach((card, idx) => {
+            card.classList.remove('active', 'card-left', 'card-right');
+            if (idx === activeIndex) card.classList.add('active');
+            else if (idx < activeIndex) card.classList.add('card-left');
+            else card.classList.add('card-right');
+        });
     }
 
-    function aplicarTemaGlobal(theme) {
-        document.body.classList.remove('theme-cyan', 'theme-purple', 'theme-gold', 'theme-emerald');
-        document.body.classList.add(`theme-${theme}`);
+    function switchMenuState(newState) {
+        currentMenuState = newState;
+        if (newState === 'GARAGE') {
+            mainCards.forEach(c => { 
+                c.style.display = 'none'; 
+                c.classList.remove('active', 'card-left', 'card-right'); 
+            });
+            garageSubCards.forEach(c => c.style.display = 'flex');
+            if (btnBackMain) btnBackMain.style.display = 'inline-block';
+            if (btnToggleView) btnToggleView.style.display = 'none';
+            carousel.classList.remove('grid-mode');
+            activeIndex = 0; // Apuntar a la primera tarjeta del garaje (Profiles)
+        } else {
+            garageSubCards.forEach(c => { 
+                c.style.display = 'none'; 
+                c.classList.remove('active', 'card-left', 'card-right'); 
+            });
+            mainCards.forEach(c => c.style.display = 'flex');
+            if (btnBackMain) btnBackMain.style.display = 'none';
+            if (btnToggleView) btnToggleView.style.display = 'inline-flex';
+            aplicarModoVista(isGrid);
+            activeIndex = 2; // Apuntar a Favoritos en menú principal
+        }
+        renderCarousel();
     }
 
-    // --- 2. CATÁLOGO VEHÍCULOS ---  
-    const carCatalog = {  
-        'fiat_palio': {  
-            name: 'Fiat Palio 1.8',  
-            images: {
-                'rojo': 'assets/garajes/garaje_palio_rojo.jpg',
-                'negro': 'assets/garajes/garaje_palio_negro.jpg',
-                'gris': 'assets/garajes/garaje_palio_gris.jpg'
+    if (btnBackMain) {
+        btnBackMain.addEventListener('click', () => switchMenuState('MAIN'));
+    }
+
+    if (btnNext) {
+        btnNext.addEventListener('click', () => {
+            const activeCards = currentMenuState === 'MAIN' ? mainCards : garageSubCards;
+            if (activeIndex < activeCards.length - 1) { 
+                activeIndex++; 
+                renderCarousel(); 
             }
-        },  
-        'chevrolet_aveo': {  
-            name: 'Chevrolet Aveo Speed',  
-            images: {
-                'rojo': 'assets/garajes/garaje_aveo_rojo.jpg',
-                'negro': 'assets/garajes/garaje_aveo_negro.jpg',
-                'gris': 'assets/garajes/garaje_aveo_gris.jpg'
-            }  
-        },  
-        'toyota_corolla': {  
-            name: 'Toyota Corolla',  
-            images: {
-                'rojo': 'assets/garajes/garaje_corolla_rojo.jpg',
-                'negro': 'assets/garajes/garaje_corolla_negro.jpg',
-                'gris': 'assets/garajes/garaje_corolla_gris.jpg'
-            }  
-        },  
-        'chevrolet_optra': {  
-            name: 'Chevrolet Optra Limited',  
-            images: {
-                'rojo': 'assets/garajes/garaje_optra_rojo.jpg',
-                'negro': 'assets/garajes/garaje_optra_negro.jpg',
-                'gris': 'assets/garajes/garaje_optra_gris.jpg'
-            }  
-        }  
-    };  
+        });
+    }
 
-    let currentColor = localStorage.getItem('user_car_color') || 'rojo';
+    if (btnPrev) {
+        btnPrev.addEventListener('click', () => {
+            if (activeIndex > 0) { 
+                activeIndex--; 
+                renderCarousel(); 
+            }
+        });
+    }
 
-    document.querySelectorAll('.color-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            currentColor = e.target.getAttribute('data-color');
-            const currentModel = selectCarModel ? selectCarModel.value : 'fiat_palio';
-            applyVehicleGarage(currentModel, currentColor);
+    mainCards.forEach((card, idx) => {
+        card.addEventListener('click', () => {
+            if (currentMenuState !== 'MAIN') return;
+            if (idx === activeIndex) {
+                if (card.id === 'card-open-map') abrirMapa();
+                else if (card.id === 'card-open-player') document.getElementById('btn-toggle-audio')?.click();
+                else if (card.id === 'card-open-garage-menu') switchMenuState('GARAGE');
+                else if (card.id === 'card-open-favorites') alert("Panel de Favoritos.");
+                else if (card.id === 'card-open-ads') alert("Espacio Publicitario.");
+                return;
+            }
+            activeIndex = idx;
+            renderCarousel();
+        });
+    });
+
+    garageSubCards.forEach((card, idx) => {
+        card.addEventListener('click', () => {
+            if (currentMenuState !== 'GARAGE') return;
+            if (idx === activeIndex) {
+                if (card.id === 'subcard-profiles') {
+                    garageUI.openProfileModal();
+                } else if (card.id === 'subcard-vehicle') {
+                    garageUI.openVehicleModal();
+                }
+                return;
+            }
+            activeIndex = idx;
+            renderCarousel();
         });
     });
 
     function applyVehicleGarage(selectedKey, colorKey = 'rojo') {
-        const selectedCar = carCatalog[selectedKey];
+        const selectedCar = CAR_CATALOG[selectedKey];
         if (selectedCar) {  
             if (displayCarName) displayCarName.textContent = selectedCar.name;  
             const imagePath = selectedCar.images[colorKey] || Object.values(selectedCar.images)[0];
@@ -119,265 +183,43 @@ document.addEventListener('DOMContentLoaded', () => {
                     url('${imagePath}') no-repeat center center / cover
                 `;
             }
-            localStorage.setItem('user_car_key', selectedKey);  
-            localStorage.setItem('user_car_color', colorKey);
+            storageService.setCarKey(selectedKey);  
+            storageService.setCarColor(colorKey);
         }  
-    }  
+    }
 
-    if (btnCloseModal) btnCloseModal.addEventListener('click', () => { if (carModal) carModal.style.display = 'none'; });
+    window.applyVehicleGarage = applyVehicleGarage;
 
-    if (btnSaveCar && selectCarModel) {  
-        btnSaveCar.addEventListener('click', () => {  
-            const selectedKey = selectCarModel.value;  
-            applyVehicleGarage(selectedKey, currentColor);
-            if (carModal) carModal.style.display = 'none';  
-        });  
-    }  
+    const savedCarKey = storageService.getCarKey();  
+    const savedColor = storageService.getCarColor();
+    applyVehicleGarage(savedCarKey, savedColor);
 
-    const savedCarKey = localStorage.getItem('user_car_key') || 'fiat_palio';  
-    const savedColor = localStorage.getItem('user_car_color') || 'rojo';
-    applyVehicleGarage(savedCarKey, savedColor);  
-    if (selectCarModel) selectCarModel.value = savedCarKey;  
+    function abrirMapa() {
+        if (garageView) garageView.style.display = 'none';
+        if (mapView) mapView.style.display = 'block';
+        mapService.initMap();
+        mapService.resize();
+    }
 
-    // --- 3. MAPAS LEAFLET ---  
-    let mapInitialized = false;  
-    let map = null;  
-    let userMarker = null;
-    let currentEngine = localStorage.getItem('overdrive_map_engine') || 'leaflet_vec';
-
-    const btnToggleEngine = document.getElementById('btn-toggle-engine');
-    const engineLabel = document.getElementById('engine-label');
-
-    if (btnToggleEngine && engineLabel) {
-        engineLabel.textContent = currentEngine === 'leaflet_vec' ? 'Leaflet Vector' : 'Leaflet Satélite';
-        btnToggleEngine.addEventListener('click', () => {
-            currentEngine = currentEngine === 'leaflet_vec' ? 'leaflet_sat' : 'leaflet_vec';
-            localStorage.setItem('overdrive_map_engine', currentEngine);
-            location.reload();
+    if (btnBackGarage) {
+        btnBackGarage.addEventListener('click', () => {
+            if (mapView) mapView.style.display = 'none';
+            if (garageView) garageView.style.display = 'flex';
         });
     }
 
-    function initLeafletMap() {
-        const puntoFijoCoords = [11.7167, -70.1333];
-        map = L.map('map').setView(puntoFijoCoords, 13);
-
-        if (currentEngine === 'leaflet_sat') {
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: '© Esri World Imagery', maxZoom: 19, maxNativeZoom: 17
-            }).addTo(map);
-        } else {
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors', maxZoom: 19
-            }).addTo(map);
-        }
-
-        cargarEstacionesLeaflet();
-        detectarUbicacionLeaflet();
-    }
-
-    function detectarUbicacionLeaflet() {
-        if (!("geolocation" in navigator)) return;
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const userLat = position.coords.latitude;
-                const userLng = position.coords.longitude;
-                if (map) map.setView([userLat, userLng], 15);
-
-                const pulseIcon = L.divIcon({
-                    className: 'user-location-marker',
-                    html: '<div class="gps-pulse"></div>',
-                    iconSize: [24, 24]
-                });
-
-                if (userMarker) {
-                    userMarker.setLatLng([userLat, userLng]);
-                } else {
-                    userMarker = L.marker([userLat, userLng], { icon: pulseIcon }).addTo(map)
-                        .bindPopup("<b>¡Tu Ubicación Actual!</b>");
-                }
-            },
-            (error) => console.warn("Error GPS:", error.message),
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
-    }
-
-    async function cargarEstacionesLeaflet() {
-        try {
-            const { data: stations, error } = await supabase.from('gas_stations').select('*');
-            if (error || !stations) return;
-
-            stations.forEach(station => {
-                let estadoTexto = "OPERATIVA";
-                let colorEstado = "#00ff66";
-                if (station.status === 'closed') { estadoTexto = "CERRADA"; colorEstado = "#ff0055"; }
-                if (station.status === 'no_fuel') { estadoTexto = "SIN COMBUSTIBLE"; colorEstado = "#ffaa00"; }
-
-                const stationIcon = L.divIcon({
-                    className: 'cyber-station-marker',
-                    html: `
-                        <div style="display: flex; flex-direction: column; align-items: center;">
-                            <div class="diamond-pin"></div>
-                            <div class="hud-station-card">
-                                <div>${station.name}</div>
-                                <div><span style="color: ${colorEstado}; font-weight: bold;">${estadoTexto}</span></div>
-                            </div>
-                        </div>
-                    `,
-                    iconSize: [120, 50], iconAnchor: [60, 0]
-                });
-
-                L.marker([station.latitude, station.longitude], { icon: stationIcon }).addTo(map);
-            });
-        } catch (err) { console.error('Error Supabase:', err); }  
-    }
-
-    function abrirMapaSegunPreferencia() {
-        if (garageView) garageView.style.display = 'none';  
-        if (mapView) mapView.style.display = 'block';  
-
-        if (!mapInitialized) {  
-            initLeafletMap();
-            mapInitialized = true;  
-        } else if (map) {
-            map.invalidateSize();
-        }
-    }
-
-    if (btnBackGarage) {  
-        btnBackGarage.addEventListener('click', () => {  
-            if (mapView) mapView.style.display = 'none';  
-            if (garageView) garageView.style.display = 'flex';  
-        });  
-    }
-
-    // --- 4. REPRODUCTOR DE MÚSICA HUD CON AUTOPLAY AL PRIMER TOQUE ---
-    function inicializarReproductorHUD() {
-        const musicWidget = document.createElement('div');
-        musicWidget.id = 'hud-audio-player';
-        musicWidget.innerHTML = `
-            <div class="audio-info-ticker">
-                <span class="audio-status-tag">🎵 HUD AUDIO</span>
-                <span class="audio-track-name">Cyberpunk Synthwave - Overdrive Track 01</span>
-            </div>
-            <button id="btn-toggle-audio">PLAY</button>
-        `;
-        document.body.appendChild(musicWidget);
-
-        const audio = new Audio('./assets/audio/cyberpunk-bg.mp3');
-        audio.loop = true;
-        audio.volume = 0.3;
-
-        const btnToggle = document.getElementById('btn-toggle-audio');
-        let isPlaying = false;
-
-        function reproducirAudio() {
-            audio.play().then(() => {
-                isPlaying = true;
-                btnToggle.textContent = 'PAUSE';
-                btnToggle.style.background = 'var(--hud-accent)';
-                btnToggle.style.color = '#fff';
-                btnToggle.style.boxShadow = '0 0 12px var(--hud-accent)';
-            }).catch(err => console.log("Bloqueo de autoplay:", err));
-        }
-
-        function pausarAudio() {
-            audio.pause();
-            isPlaying = false;
-            btnToggle.textContent = 'PLAY';
-            btnToggle.style.background = 'var(--hud-primary)';
-            btnToggle.style.color = '#050811';
-            btnToggle.style.boxShadow = '0 0 10px var(--hud-primary)';
-        }
-
-        btnToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (!isPlaying) { reproducirAudio(); } else { pausarAudio(); }
-        });
-
-        const desbloquearAudioAlPrimerToque = () => {
-            if (!isPlaying) { reproducirAudio(); }
-            window.removeEventListener('pointerdown', desbloquearAudioAlPrimerToque);
-            window.removeEventListener('touchstart', desbloquearAudioAlPrimerToque);
-        };
-
-        window.addEventListener('pointerdown', desbloquearAudioAlPrimerToque, { once: true });
-        window.addEventListener('touchstart', desbloquearAudioAlPrimerToque, { once: true });
-    }
-
-    inicializarReproductorHUD();
-
-    // --- 5. LÓGICA DE ROTACIÓN 3D, NAVEGACIÓN Y GESTOS TÁCTILES ---
-    const cards = Array.from(document.querySelectorAll('.cyber-card'));
-    const btnPrev = document.getElementById('btn-prev-card');
-    const btnNext = document.getElementById('btn-next-card');
-    let activeIndex = 2;
-
-    function actualizarAngulosTransicion(index) {
-        if (index < 0) { activeIndex = 0; }
-        else if (index >= cards.length) { activeIndex = cards.length - 1; }
-        else { activeIndex = index; }
-
-        cards.forEach((card, idx) => {
-            card.classList.remove('active', 'card-left', 'card-right');
-            if (idx === activeIndex) { card.classList.add('active'); }
-            else if (idx < activeIndex) { card.classList.add('card-left'); }
-            else { card.classList.add('card-right'); }
+    if (btnSyncData) {
+        btnSyncData.addEventListener('click', () => {
+            btnSyncData.style.transform = 'rotate(360deg)';
+            btnSyncData.style.transition = 'transform 0.6s ease';
+            mapService.loadGasStations();
+            mapService.trackUserLocation();
+            setTimeout(() => {
+                btnSyncData.style.transform = 'none';
+                btnSyncData.style.transition = 'none';
+            }, 600);
         });
     }
 
-    actualizarAngulosTransicion(activeIndex);
-
-    cards.forEach((card, idx) => {
-        card.addEventListener('click', () => {
-            if (idx === activeIndex) {
-                if (card.id === 'card-open-map') { abrirMapaSegunPreferencia(); }
-                else if (card.id === 'card-open-player') {
-                    const btnToggle = document.getElementById('btn-toggle-audio');
-                    if (btnToggle) btnToggle.click();
-                } else if (card.id === 'card-open-favorites') { alert("Panel de Favoritos."); }
-                else if (card.id === 'card-open-modal') { if (carModal) carModal.style.display = 'flex'; }
-                else if (card.id === 'card-open-ads') { alert("Espacio Publicitario."); }
-                return;
-            }
-            actualizarAngulosTransicion(idx);
-        });
-    });
-
-    if (btnNext) {
-        btnNext.addEventListener('click', () => {
-            if (activeIndex < cards.length - 1) { actualizarAngulosTransicion(activeIndex + 1); }
-        });
-    }
-
-    if (btnPrev) {
-        btnPrev.addEventListener('click', () => {
-            if (activeIndex > 0) { actualizarAngulosTransicion(activeIndex - 1); }
-        });
-    }
-
-    // --- SOPORTE TÁCTIL (SWIPE) ---
-    let touchStartX = 0;
-    let touchEndX = 0;
-    const carouselStage = document.querySelector('.garage-stage');
-
-    if (carouselStage) {
-        carouselStage.addEventListener('touchstart', (e) => {
-            touchStartX = e.changedTouches[0].screenX;
-        }, { passive: true });
-
-        carouselStage.addEventListener('touchend', (e) => {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipeGesture();
-        }, { passive: true });
-    }
-
-    function handleSwipeGesture() {
-        const swipeThreshold = 40;
-        if (touchEndX < touchStartX - swipeThreshold) {
-            if (activeIndex < cards.length - 1) { actualizarAngulosTransicion(activeIndex + 1); }
-        }
-        if (touchEndX > touchStartX + swipeThreshold) {
-            if (activeIndex > 0) { actualizarAngulosTransicion(activeIndex - 1); }
-        }
-    }
+    switchMenuState('MAIN');
 });

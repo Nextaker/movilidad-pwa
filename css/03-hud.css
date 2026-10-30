@@ -1,0 +1,156 @@
+/* HUD Superior */
+.hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 12px 25px;
+    backdrop-filter: blur(12px);
+    box-shadow: var(--hud-shadow);
+    width: 90%;
+    margin: 0 auto;
+    z-index: 5;
+    transition: all 0.4s ease;
+}
+
+.hud-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+/* Avatar optimizado y proporcionado */
+.hud-avatar-container {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    border-radius: 50%;
+    border: 2px solid var(--hud-primary);
+    overflow: hidden;
+    box-shadow: 0 0 12px var(--hud-primary);
+    flex-shrink: 0;
+    transition: all 0.4s ease;
+}
+
+.hud-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hud-info-block {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.hud-top-line {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+}
+
+.hud-top-line strong, .highlight {
+    color: var(--hud-primary);
+    font-weight: 700;
+}
+
+.hud-separator {
+    color: var(--card-border);
+    margin: 0 6px;
+}
+
+.hud-metrics-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.metric-item span {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+
+.metric-item strong {
+    font-size: 1rem;
+    color: var(--hud-primary);
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+}
+
+.divider-vertical {
+    width: 1px;
+    height: 20px;
+    background: var(--card-border);
+}
+
+/* --- BOTÓN TOGGLE VISTA Y SINCRONIZACIÓN --- */
+.lab-mode-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lab-toggle-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--hud-primary);
+    color: var(--hud-primary);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 0 10px var(--hud-primary);
+    transition: all 0.3s ease;
+}
+
+.lab-toggle-btn:hover {
+    background: var(--hud-primary);
+    color: #050811;
+    box-shadow: 0 0 18px var(--hud-primary);
+}
+
+/* Botón de Sincronización Circular Perfecto (evita que se vuelva óvalo) */
+.sync-icon-btn {
+    width: 35px !important;
+    height: 35px !important;
+    min-width: 35px !important;
+    min-height: 35px !important;
+    max-width: 35px !important;
+    max-height: 35px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+/* Póster Patrocinante */
+.wall-poster-sponsor {
+    position: absolute;
+    top: 30%;
+    left: 30px;
+    width: 190px;
+    background: var(--card-bg);
+    border: 1px solid var(--hud-primary);
+    border-radius: 8px;
+    padding: 12px;
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    z-index: 5;
+    box-shadow: var(--hud-shadow);
+    transition: all 0.4s ease;
+}
+
+.wall-poster-sponsor span { font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; }
+.wall-poster-sponsor h4 { color: var(--hud-primary); font-size: 0.8rem; margin: 3px 0; text-shadow: 0 0 6px rgba(0,0,0,0.8); }
+.wall-poster-sponsor p { color: var(--text-primary); font-size: 0.7rem; line-height: 1.2; }
+

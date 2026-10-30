@@ -1,0 +1,41 @@
+/* =========================================================
+   PALETAS Y TEMAS GLOBALES DE LA APLICACIÓN
+   ========================================================= */
+:root {
+    /* Tema Base (Cyber Cyan / Red) */
+    --hud-primary: #00f0ff;
+    --hud-accent: #ff0055;
+    --card-bg: rgba(5, 8, 17, 0.92); /* Fondo más opaco y profundo para legibilidad */
+    --card-border: rgba(0, 240, 255, 0.4);
+    --hud-shadow: 0 0 25px rgba(0, 240, 255, 0.3);
+    --text-primary: #ffffff;          /* Blanco puro para máxima nitidez */
+    --text-muted: #a5b3c2;          /* Texto secundario con mayor brillo */
+}
+
+/* Tema Púrpura / Neon Magenta */
+body.theme-purple {
+    --hud-primary: #bf00ff;
+    --hud-accent: #ff00aa;
+    --card-bg: rgba(12, 5, 20, 0.94);
+    --card-border: rgba(191, 0, 255, 0.4);
+    --hud-shadow: 0 0 25px rgba(191, 0, 255, 0.35);
+}
+
+/* Tema Cyber Gold / Fuego */
+body.theme-gold {
+    --hud-primary: #ffcc00;
+    --hud-accent: #ff5500;
+    --card-bg: rgba(18, 12, 5, 0.94);
+    --card-border: rgba(255, 204, 0, 0.4);
+    --hud-shadow: 0 0 25px rgba(255, 204, 0, 0.35);
+}
+
+/* Tema Esmeralda Neón */
+body.theme-emerald {
+    --hud-primary: #00ffcc;
+    --hud-accent: #00cc66;
+    --card-bg: rgba(2, 18, 14, 0.94);
+    --card-border: rgba(0, 255, 204, 0.4);
+    --hud-shadow: 0 0 25px rgba(0, 255, 204, 0.35);
+}
+

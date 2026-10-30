@@ -8,11 +8,24 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     
-    <!-- Estilos HUD -->
+    <!-- Estilos HUD (Carga tu style.css maestro modularizado) -->
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
+
+<!-- PANTALLA DE ARRANQUE / BOOT SCREEN (ESTILO VIDEOJUEGO) -->
+    <div id="boot-screen" class="boot-overlay">
+        <div class="boot-terminal-box">
+            <div class="boot-logo-glitch">OVERDRIVE // HUD</div>
+            <p class="boot-status-text" id="boot-status-msg">VERIFICANDO NÚCLEO SUPABASE...</p>
+            <div class="boot-progress-bar"><div class="boot-progress-fill" id="boot-fill"></div></div>
+            <button class="neon-btn primary boot-enter-btn" id="btn-boot-enter" style="display: none;">
+                [ INICIALIZAR MOTOR ]
+            </button>
+        </div>
+    </div>
+
 <div id="orientation-warning" class="orientation-overlay" style="display:none;">
     <div class="warning-content">
         <button class="close-warning-btn" id="btn-close-warning">✕ Continuar en Vertical</button>
@@ -29,43 +42,56 @@
         <header class="hud-header">
             <div class="hud-left">
                 <div class="hud-avatar-container">
-                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" alt="Avatar" class="hud-avatar">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" alt="Avatar" class="hud-avatar" id="hud-avatar-img">
                 </div>
                 <div class="hud-info-block">
                     <div class="hud-top-line">
-                        Welcome, <strong>Jose Nelo</strong>! 
+                        Piloto: <strong id="auth-user-label">Invitado</strong> 
                         <span class="hud-separator">|</span> 
-                        Car: <span class="highlight" id="display-car-name">Fiat Palio 1.8</span> 
+                        Vehículo: <span class="highlight" id="display-car-name">Fiat Palio 1.8</span> 
                         <span class="hud-separator">|</span> 
-                        Last Check: <span class="highlight">Today</span>
+                        Último Check: <span class="highlight">Hoy</span>
                     </div>
                     
                     <div class="hud-metrics-row">
                         <div class="metric-item">
-                            <span>LEVEL</span>
+                            <span>NIVEL</span>
                             <strong>#1</strong>
                         </div>
                         <div class="divider-vertical"></div>
                         <div class="metric-item">
-                            <span>MILEAGE</span>
-                            <strong>1,000 km</strong>
+                            <span>KILOMETRAJE</span>
+                            <strong id="hud-mileage-val">1,000 km</strong>
                         </div>
                         <div class="divider-vertical"></div>
                         <div class="metric-item">
-                            <span>NEXT SERVICE</span>
-                            <strong>37.3 km/h</strong>
+                            <span>PRÓX. SERVICIO</span>
+                            <strong id="hud-service-val">37.3 km/h</strong>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- SELECTOR DE MODO DE VISTA TIPO LAB Y RECARGA -->
-            <div class="lab-mode-selector" style="display: flex; gap: 8px;">
+            <!-- BOTONERA HEADER -->
+            <div class="lab-mode-selector" style="display: flex; gap: 8px; align-items: center;">
+                <button class="lab-toggle-btn" id="btn-auth-open" type="button">🔓 ACCESAR</button>
+                <button class="lab-toggle-btn" id="btn-auth-logout" type="button" style="display:none;">🔒 SALIR</button>
+                
                 <button class="lab-toggle-btn" id="btn-toggle-view" title="Cambiar Vista">
-                    <span id="toggle-icon">🔲</span> <span id="toggle-text">Modo Cuadrícula</span>
+                    <svg id="toggle-svg-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg> 
+                    <span id="toggle-text">Cuadrícula</span>
                 </button>
-                <button class="lab-toggle-btn" id="btn-reload-app" title="Actualizar App" onclick="location.reload()">
-                    🔄 Recargar
+                
+                <!-- Botón de Sincronización Redondo Perfecto -->
+                <button class="lab-toggle-btn sync-icon-btn" id="btn-sync-data" title="Sincronizar Datos">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.73-5.73"/>
+                    </svg>
                 </button>
             </div>
         </header>
@@ -76,105 +102,98 @@
             <p>Ofertas en neumáticos y lubricantes en Punto Fijo. Haz clic aquí.</p>
         </div>
 
-        <!-- ESCENARIO CENTRAL CON TARJETAS TÁCTILES -->
+        <!-- ESCENARIO CENTRAL CON TARJETAS TÁCTILES DINÁMICAS -->
         <div class="garage-stage">
             <div class="cyber-carousel" id="cyber-carousel">
                 
-                <!-- TARJETA 1: MAPA -->
-                <div class="cyber-card card-left" id="card-open-map">
+                <!-- ========================================== -->
+                <!-- ESTADO A: MENÚ PRINCIPAL (5 Tarjetas HUD)  -->
+                <!-- ========================================== -->
+                <div class="cyber-card card-left main-menu-card" id="card-open-map">
                     <div class="card-top-bar">
-                        <div class="card-icon-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-                        </div>
+                        <div class="card-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
                         <span class="card-tag">GPS // 01</span>
                     </div>
-                    <div class="card-body">
-                        <h3 class="card-title">MAPA HUD</h3>
-                        <p class="card-desc">Navegación GPS & Estaciones</p>
-                    </div>
-                    <div class="card-footer-action">
-                        <span>[ABRIR MAPA]</span>
-                        <span class="arrow">❯</span>
-                    </div>
+                    <div class="card-body"><h3 class="card-title">MAPA HUD</h3><p class="card-desc">Navegación GPS & Estaciones</p></div>
+                    <div class="card-footer-action"><span>[ABRIR MAPA]</span><span class="arrow">❯</span></div>
                 </div>
 
-                <!-- TARJETA 2: MÚSICA -->
-                <div class="cyber-card card-left" id="card-open-player">
+                <div class="cyber-card card-left main-menu-card" id="card-open-player">
                     <div class="card-top-bar">
-                        <div class="card-icon-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6"/></svg>
-                        </div>
+                        <div class="card-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6"/></svg></div>
                         <span class="card-tag">AUDIO // 02</span>
                     </div>
-                    <div class="card-body">
-                        <h3 class="card-title">MÚSICA HUD</h3>
-                        <p class="card-desc">Reproductor Audio Synthwave</p>
-                    </div>
-                    <div class="card-footer-action">
-                        <span>[REPRODUCIR]</span>
-                        <span class="arrow">❯</span>
-                    </div>
+                    <div class="card-body"><h3 class="card-title">MÚSICA HUD</h3><p class="card-desc">Reproductor MP3 Local</p></div>
+                    <div class="card-footer-action"><span>[REPRODUCIR]</span><span class="arrow">❯</span></div>
                 </div>
 
-                <!-- TARJETA 3: FAVORITOS -->
-                <div class="cyber-card active" id="card-open-favorites">
+                <div class="cyber-card active main-menu-card" id="card-open-favorites">
                     <div class="card-top-bar">
-                        <div class="card-icon-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                        </div>
-                        <span class="card-tag">DATA // 03</span>
+                        <div class="card-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+                        <span class="card-tag">DATOS // 03</span>
                     </div>
-                    <div class="card-body">
-                        <h3 class="card-title">FAVORITOS</h3>
-                        <p class="card-desc">Rutas y Servicios Guardados</p>
-                    </div>
-                    <div class="card-footer-action">
-                        <span>[ACCEDER]</span>
-                        <span class="arrow">❯</span>
-                    </div>
+                    <div class="card-body"><h3 class="card-title">FAVORITOS</h3><p class="card-desc">Rutas y Servicios Guardados</p></div>
+                    <div class="card-footer-action"><span>[ACCEDER]</span><span class="arrow">❯</span></div>
                 </div>
 
-                <!-- TARJETA 4: CONFIGURACIÓN DE VEHÍCULO -->
-                <div class="cyber-card card-right" id="card-open-modal">
+                <div class="cyber-card card-right main-menu-card" id="card-open-garage-menu">
                     <div class="card-top-bar">
-                        <div class="card-icon-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                        </div>
+                        <div class="card-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
                         <span class="card-tag">GARAJE // 04</span>
                     </div>
-                    <div class="card-body">
-                        <h3 class="card-title">GARAJE</h3>
-                        <p class="card-desc">Configurar Modelo & Color</p>
-                    </div>
-                    <div class="card-footer-action">
-                        <span>[CONFIGURAR]</span>
-                        <span class="arrow">❯</span>
-                    </div>
+                    <div class="card-body"><h3 class="card-title">GARAJE</h3><p class="card-desc">Perfil, Vehículo & Ajustes</p></div>
+                    <div class="card-footer-action"><span>[ENTRAR]</span><span class="arrow">❯</span></div>
                 </div>
 
-                <!-- TARJETA 5: ANUNCIOS -->
-                <div class="cyber-card card-right" id="card-open-ads">
+                <div class="cyber-card card-right main-menu-card" id="card-open-ads">
                     <div class="card-top-bar">
-                        <div class="card-icon-box">
-                            <span style="font-size: 11px; font-weight: bold; color: var(--hud-primary);">Ad</span>
-                        </div>
-                        <span class="card-tag">ADS // 05</span>
+                        <div class="card-icon-box"><span style="font-size: 11px; font-weight: bold; color: var(--hud-primary);">Ad</span></div>
+                        <span class="card-tag">ANUNCIOS // 05</span>
                     </div>
-                    <div class="card-body">
-                        <h3 class="card-title">ANUNCIOS</h3>
-                        <p class="card-desc">Patrocinadores Locales</p>
+                    <div class="card-body"><h3 class="card-title">ANUNCIOS</h3><p class="card-desc">Patrocinadores Locales</p></div>
+                    <div class="card-footer-action"><span>[VER OFERTAS]</span><span class="arrow">❯</span></div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- ESTADO B: SUB-MENÚ GARAJE (3 Tarjetas 3D)  -->
+                <!-- ========================================== -->
+                
+                <!-- TARJETA 1: PERFIL DEL PILOTO -->
+                <div class="cyber-card card-left garage-sub-card" id="subcard-profiles" style="display: none;">
+                    <div class="card-top-bar">
+                        <div class="card-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+                        <span class="card-tag">PILOTO // 01</span>
                     </div>
-                    <div class="card-footer-action">
-                        <span>[VER OFERTAS]</span>
-                        <span class="arrow">❯</span>
+                    <div class="card-body"><h3 class="card-title">PERFIL</h3><p class="card-desc">Identidad de Piloto & Avatar</p></div>
+                    <div class="card-footer-action"><span>[VER PERFIL]</span><span class="arrow">❯</span></div>
+                </div>
+
+                <!-- TARJETA 2: MI VEHÍCULO (FICHA TÉCNICA) -->
+                <div class="cyber-card active garage-sub-card" id="subcard-vehicle" style="display: none;">
+                    <div class="card-top-bar">
+                        <div class="card-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-3-4H9L6 10l-2.5 1.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg></div>
+                        <span class="card-tag">MOTOR // 02</span>
                     </div>
+                    <div class="card-body"><h3 class="card-title">MI VEHÍCULO</h3><p class="card-desc">Motor, Aceite & Telemetría</p></div>
+                    <div class="card-footer-action"><span>[EDITAR FICHA]</span><span class="arrow">❯</span></div>
+                </div>
+
+                <!-- TARJETA 3: CONFIGURACIÓN DE GARAJE (FONDOS Y ESTÉTICA) -->
+                <div class="cyber-card card-right garage-sub-card" id="subcard-garage-config" style="display: none;">
+                    <div class="card-top-bar">
+                        <div class="card-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></div>
+                        <span class="card-tag">ESTÉTICA // 03</span>
+                    </div>
+                    <div class="card-body"><h3 class="card-title">CONFIG GARAJE</h3><p class="card-desc">Fondo del Taller, Auto & Temas</p></div>
+                    <div class="card-footer-action"><span>[PERSONALIZAR]</span><span class="arrow">❯</span></div>
                 </div>
 
             </div>
 
-            <!-- CONTROLES FLECHAS ANT / SIG -->
+            <!-- CONTROLES FLECHAS ANT / SIG Y RETORNO -->
             <div class="carousel-nav-container">
                 <button class="nav-arrow-btn" id="btn-prev-card">← Ant</button>
+                <button class="nav-arrow-btn" id="btn-back-main" style="display:none; border-color: var(--hud-accent); color: var(--hud-accent);">⬅ VOLVER AL MENÚ</button>
                 <button class="nav-arrow-btn" id="btn-next-card">Sig →</button>
             </div>
         </div>
@@ -187,51 +206,204 @@
         <div style="position: absolute; top: 15px; left: 80px; z-index: 1000; display: flex; gap: 10px;">
             <button class="cyber-btn back-to-garage" id="btn-back-garage">⬅️ Volver</button>
             <button class="cyber-btn" id="btn-toggle-engine" style="font-size: 11px; background: rgba(5,8,17,0.9); border: 1px solid var(--hud-primary); color: var(--hud-primary);">
-                ⚙️ Motor: <span id="engine-label">Leaflet Vector</span>
+                ⚙️ Motor: <span id="engine-label">Vector Leaflet</span>
             </button>
         </div>
         <div id="map" style="height: 100%; width: 100%;"></div>
     </div>
 
-    <!-- MODAL SELECTOR DE VEHÍCULO -->
-    <div id="car-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h3>Configuración del Garaje</h3>
-            
-            <div class="form-group">
-                <label for="select-car-model">Seleccionar Vehículo del Catálogo</label>
-                <select id="select-car-model" class="custom-select">
-                    <option value="fiat_palio">Fiat Palio 1.8 (1.8 L)</option>
-                    <option value="chevrolet_aveo">Chevrolet Aveo Speed (1.5 L)</option>
-                    <option value="toyota_corolla">Toyota Corolla (1.8 L)</option>
-                    <option value="chevrolet_optra">Chevrolet Optra Limited (1.8 L)</option>
-                </select>
+    <!-- ================= MODALES AUTENTICACIÓN Y SISTEMA ================= -->
+
+    <!-- MODAL AUTENTICACIÓN -->
+    <div id="auth-modal" class="modal-overlay">
+        <div class="modal-content auth-cyber-card">
+            <div class="auth-card-header">
+                <div class="auth-icon-badge">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--hud-primary)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h3 id="auth-title">ACCESO OVERDRIVE</h3>
+                <p class="auth-subtitle">IDENTIFICACIÓN DE PILOTO O NUEVO REGISTRO</p>
             </div>
 
-            <div class="form-group" style="margin-top: 15px;">
-                <label>Acabado / Color del Vehículo</label>
-                <div class="color-selector-row" style="display: flex; gap: 12px; margin-top: 8px;">
-                    <button type="button" class="color-btn" data-color="rojo" style="background: #ff2a2a; width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; cursor: pointer;" title="Rojo"></button>
-                    <button type="button" class="color-btn" data-color="negro" style="background: #111111; width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--hud-primary); cursor: pointer;" title="Negro"></button>
-                    <button type="button" class="color-btn" data-color="gris" style="background: #aaaaaa; width: 35px; height: 35px; border-radius: 50%; border: 2px solid #fff; cursor: pointer;" title="Gris"></button>
-                </div>
-                
-                <label style="margin-top: 12px; display: block;">Tema Global de la App</label>
-                <div class="theme-selector" style="display: flex; gap: 8px; margin-top: 5px; flex-wrap: wrap;">
-                    <button type="button" onclick="cambiarTemaGlobal('cyan')" style="background:#00f0ff; color:#050811; border:none; padding:5px 10px; cursor:pointer; font-weight:bold; border-radius:4px;">Cyber Cyan</button>
-                    <button type="button" onclick="cambiarTemaGlobal('purple')" style="background:#bf00ff; color:#fff; border:none; padding:5px 10px; cursor:pointer; font-weight:bold; border-radius:4px;">Púrpura Neón</button>
-                    <button type="button" onclick="cambiarTemaGlobal('emerald')" style="background:#00ffcc; color:#050811; border:none; padding:5px 10px; cursor:pointer; font-weight:bold; border-radius:4px;">Esmeralda</button>
-                    <button type="button" onclick="cambiarTemaGlobal('gold')" style="background:#ffcc00; color:#050811; border:none; padding:5px 10px; cursor:pointer; font-weight:bold; border-radius:4px;">Cyber Gold</button>
-                </div>
+            <div class="auth-tab-switch">
+                <button id="tab-login" class="auth-tab-btn active" type="button">[ INICIAR SESIÓN ]</button>
+                <button id="tab-register" class="auth-tab-btn" type="button">[ REGISTRO ]</button>
             </div>
 
-            <div class="modal-actions" style="margin-top: 20px;">
-                <button class="neon-btn primary" id="btn-save-car">Guardar Cambios</button>
-                <button class="neon-btn" id="btn-close-modal">Cancelar</button>
+            <form id="auth-form" style="margin-top: 15px;">
+                <div class="form-group auth-form-group" id="group-pilot-name" style="display: none;">
+                    <label for="auth-pilot-name">APODO DE PILOTO (CALL-SIGN)</label>
+                    <input id="auth-pilot-name" type="text" placeholder="Ej. Jose Nelo // Nextaker" autocomplete="username">
+                </div>
+
+                <div class="form-group auth-form-group">
+                    <label for="auth-email">CORREO ELECTRÓNICO</label>
+                    <input id="auth-email" type="email" placeholder="piloto@overdrive.net" required autocomplete="email">
+                </div>
+
+                <div class="form-group auth-form-group">
+                    <label for="auth-password">CONTRASEÑA</label>
+                    <input id="auth-password" type="password" placeholder="••••••••••••" required minlength="6" autocomplete="current-password">
+                </div>
+
+                <p id="auth-status" class="auth-status" role="status"></p>
+
+                <div class="modal-actions auth-actions">
+                    <button class="neon-btn primary full-width" id="auth-submit" type="submit">INICIALIZAR SISTEMA ➔</button>
+                    <button class="neon-btn secondary" id="btn-auth-close" type="button">CANCELAR</button>
+                </div>
+            </form>
+
+            <div class="auth-card-footer">
+                <span>🛡️ ENCRIPTADO JWT 256-BIT</span>
+                <span>🟢 SUPABASE AUTH SECURED</span>
             </div>
         </div>
     </div>
 
+    <!-- MODAL 1: PERFIL DEL PILOTO CON SELECTOR DE AVATAR -->
+    <div id="modal-pilot-profile" class="modal-overlay">
+        <div class="modal-content auth-cyber-card">
+            <div class="auth-card-header">
+                <div class="auth-icon-badge">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--hud-primary)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+                <h3>PERFIL DE PILOTO</h3>
+                <p class="auth-subtitle">IDENTIDAD Y SELECCIÓN DE AVATAR</p>
+            </div>
+            
+            <div class="form-group auth-form-group">
+                <label>APODO DE PILOTO (CALL-SIGN)</label>
+                <input id="profile-pilot-name" type="text" style="width:100%; padding:10px; background:rgba(5,8,17,0.8); border:1px solid var(--card-border); color:var(--hud-primary); font-weight:bold;">
+            </div>
+
+            <div class="form-group auth-form-group">
+                <label>CORREO REGISTRADO</label>
+                <input id="profile-email" type="text" readonly style="width:100%; padding:10px; background:rgba(5,8,17,0.8); border:1px solid var(--card-border); color:#fff; opacity:0.7;">
+            </div>
+
+            <!-- SELECTOR DE AVATARES -->
+            <div class="form-group auth-form-group">
+                <label>AVATARES DE ACCESO RÁPIDO</label>
+                <div class="avatar-presets" style="display: flex; gap: 12px; justify-content: center; margin-top: 8px;">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" class="avatar-option" style="width:42px; height:42px; border-radius:50%; border:2px solid var(--hud-primary); cursor:pointer; object-fit:cover;" title="Cyber Pilot 1">
+                    <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80" class="avatar-option" style="width:42px; height:42px; border-radius:50%; border:2px solid var(--card-border); cursor:pointer; object-fit:cover;" title="Cyber Pilot 2">
+                    <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=150&q=80" class="avatar-option" style="width:42px; height:42px; border-radius:50%; border:2px solid var(--card-border); cursor:pointer; object-fit:cover;" title="Cyber Pilot 3">
+                </div>
+            </div>
+
+            <div class="form-group auth-form-group">
+                <label for="profile-avatar-url">URL DE AVATAR PERSONALIZADO</label>
+                <input id="profile-avatar-url" type="text" placeholder="https://..." style="width:100%; padding:8px; background:rgba(5,8,17,0.8); border:1px solid var(--card-border); color:#fff;">
+            </div>
+
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button class="neon-btn primary full-width" id="btn-save-pilot-profile" type="button">GUARDAR PERFIL ➔</button>
+                <button class="neon-btn secondary" id="btn-close-profile-modal" type="button" style="margin-top: 8px;">CERRAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: FICHA TÉCNICA DEL VEHÍCULO -->
+    <div id="modal-vehicle-spec" class="modal-overlay">
+        <div class="modal-content auth-cyber-card" style="max-width: 480px;">
+            <div class="auth-card-header">
+                <div class="auth-icon-badge">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--hud-primary)" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-3-4H9L6 10l-2.5 1.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+                </div>
+                <h3>TELEMETRÍA DE VEHÍCULO</h3>
+                <p class="auth-subtitle">DATOS TÉCNICOS & MANTENIMIENTO DEL MOTOR</p>
+            </div>
+
+            <form id="vehicle-spec-form">
+                <div class="form-group auth-form-group">
+                    <label for="spec-car-model">MODELO DEL VEHÍCULO</label>
+                    <select id="spec-car-model" class="custom-select" style="width: 100%; padding: 8px; background: rgba(5,8,17,0.8); color: #fff; border: 1px solid var(--card-border); font-family: inherit;">
+                        <option value="fiat_palio">Fiat Palio 1.8 (1.8 L)</option>
+                        <option value="chevrolet_aveo">Chevrolet Aveo Speed (1.5 L)</option>
+                        <option value="toyota_corolla">Toyota Corolla (1.8 L)</option>
+                        <option value="chevrolet_optra">Chevrolet Optra Limited (1.8 L)</option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                    <div class="form-group auth-form-group">
+                        <label for="spec-engine-type">MOTOR</label>
+                        <input id="spec-engine-type" type="text" placeholder="Ej. 1.8L GM" style="width:100%; padding:8px; background:rgba(5,8,17,0.8); border:1px solid var(--card-border); color:#fff;">
+                    </div>
+                    <div class="form-group auth-form-group">
+                        <label for="spec-oil-type">TIPO DE ACEITE</label>
+                        <input id="spec-oil-type" type="text" placeholder="Ej. 15W-40" style="width:100%; padding:8px; background:rgba(5,8,17,0.8); border:1px solid var(--card-border); color:#fff;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group auth-form-group">
+                        <label for="spec-mileage">KILOMETRAJE (KM)</label>
+                        <input id="spec-mileage" type="number" placeholder="Ej. 150000" style="width:100%; padding:8px; background:rgba(5,8,17,0.8); border:1px solid var(--card-border); color:#fff;">
+                    </div>
+                    <div class="form-group auth-form-group">
+                        <label for="spec-next-service">PRÓX. SERVICIO (KM)</label>
+                        <input id="spec-next-service" type="number" placeholder="Ej. 155000" style="width:100%; padding:8px; background:rgba(5,8,17,0.8); border:1px solid var(--card-border); color:#fff;">
+                    </div>
+                </div>
+
+                <p id="vehicle-spec-status" class="auth-status" style="margin-top: 5px;"></p>
+
+                <div class="modal-actions" style="margin-top: 15px;">
+                    <button class="neon-btn primary full-width" id="btn-save-vehicle-spec" type="button">GUARDAR FICHA ➔</button>
+                    <button class="neon-btn secondary" id="btn-close-vehicle-modal" type="button" style="margin-top: 8px;">CANCELAR</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+   <!-- MODAL 3: CONFIGURACIÓN DE GARAJE (FONDOS, VEHÍCULO Y TEMAS) -->
+    <div id="modal-garage-config" class="modal-overlay">
+        <div class="modal-content auth-cyber-card" style="max-width: 480px;">
+            <div class="auth-card-header">
+                <div class="auth-icon-badge">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--hud-primary)" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                </div>
+                <h3>CONFIGURACIÓN DE GARAJE</h3>
+                <p class="auth-subtitle">ESTÉTICA DEL TALLER, VEHÍCULO DE FONDO & TEMAS</p>
+            </div>
+
+            <div class="form-group auth-form-group">
+                <label>VEHÍCULO DE FONDO EN EL GARAJE</label>
+                <select id="select-garage-car-model" class="custom-select" style="width: 100%; padding: 8px; background: rgba(5,8,17,0.8); color: #fff; border: 1px solid var(--card-border); font-family: inherit;">
+                    <option value="fiat_palio">Fiat Palio 1.8</option>
+                    <option value="chevrolet_aveo">Chevrolet Aveo Speed</option>
+                    <option value="toyota_corolla">Toyota Corolla</option>
+                    <option value="chevrolet_optra">Chevrolet Optra Limited</option>
+                </select>
+            </div>
+
+            <div class="form-group auth-form-group" style="margin-top: 10px;">
+                <label>COLOR / ACABADO DEL AUTO EN EL GARAJE</label>
+                <div class="color-selector-row" style="display: flex; gap: 15px; margin-top: 6px; justify-content: center;">
+                    <button type="button" class="color-btn" data-color="rojo" style="background: #ff2a2a; width: 32px; height: 32px; border-radius: 50%; border: 2px solid #fff; cursor: pointer;" title="Rojo"></button>
+                    <button type="button" class="color-btn" data-color="negro" style="background: #111111; width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--hud-primary); cursor: pointer;" title="Negro"></button>
+                    <button type="button" class="color-btn" data-color="gris" style="background: #aaaaaa; width: 32px; height: 32px; border-radius: 50%; border: 2px solid #fff; cursor: pointer;" title="Gris"></button>
+                </div>
+            </div>
+
+            <div class="form-group auth-form-group" style="margin-top: 10px;">
+                <label>TEMA NEÓN DE INTERFAZ</label>
+                <select id="select-theme-mode" class="custom-select" style="width: 100%; padding: 8px; background: rgba(5,8,17,0.8); color: #fff; border: 1px solid var(--card-border); font-family: inherit;">
+                    <option value="">Cyber Cyan (Predeterminado)</option>
+                    <option value="theme-purple">Púrpura Neón</option>
+                    <option value="theme-gold">Cyber Gold / Fuego</option>
+                    <option value="theme-emerald">Esmeralda Neón</option>
+                </select>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button class="neon-btn primary full-width" id="btn-save-garage-config" type="button">APLICAR CAMBIOS ➔</button>
+                <button class="neon-btn secondary" id="btn-close-garage-config" type="button" style="margin-top: 8px;">CERRAR</button>
+            </div>
+        </div>
+    </div>
     <!-- Librería Leaflet -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script type="module" src="js/main.js"></script>
