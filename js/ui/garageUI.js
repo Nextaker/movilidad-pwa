@@ -2,24 +2,20 @@
 import { vehicleService } from '../services/vehicleService.js';
 import { storageService } from '../services/storageService.js';
 import { authService } from '../services/authService.js';
+import { themeUI } from './themeUI.js';
+import { CAR_CATALOG, DEFAULT_CAR_KEY, DEFAULT_PAINT_KEY } from '../config.js';
 
 export const garageUI = {
     init() {
-        // --- 1. REFERENCIAS AL DOM ---
-        const subcardProfiles = document.getElementById('subcard-profiles');
-        const subcardVehicle = document.getElementById('subcard-vehicle');
-        const subcardGarageConfig = document.getElementById('subcard-garage-config');
-
-        // Modal 1: Perfil
         const modalProfile = document.getElementById('modal-pilot-profile');
         const btnCloseProfile = document.getElementById('btn-close-profile-modal');
         const btnSaveProfile = document.getElementById('btn-save-pilot-profile');
         const profilePilotName = document.getElementById('profile-pilot-name');
         const profileEmail = document.getElementById('profile-email');
         const profileAvatarUrl = document.getElementById('profile-avatar-url');
+        const profileStatus = document.getElementById('profile-status');
         const hudAvatarImg = document.getElementById('hud-avatar-img');
 
-        // Modal 2: Vehículo (Telemetría)
         const modalVehicle = document.getElementById('modal-vehicle-spec');
         const btnCloseVehicle = document.getElementById('btn-close-vehicle-modal');
         const btnSaveVehicle = document.getElementById('btn-save-vehicle-spec');
@@ -30,41 +26,10 @@ export const garageUI = {
         const specNextService = document.getElementById('spec-next-service');
         const statusMsg = document.getElementById('vehicle-spec-status');
 
-        // Modal 3: Configuración de Garaje & Estética
-        const modalGarageConfig = document.getElementById('modal-garage-config');
-        const btnCloseGarageConfig = document.getElementById('btn-close-garage-config');
-        const btnSaveGarageConfig = document.getElementById('btn-save-garage-config');
-        const selectGarageCarModel = document.getElementById('select-garage-car-model');
-        const selectThemeMode = document.getElementById('select-theme-mode');
-
-        // --- 2. LÓGICA INTELIGENTE DE CLIC EN TARJETAS (Evita apertura accidental) ---
-        const handleCardInteraction = (cardElement, openModalCallback) => {
-            if (!cardElement) return;
-            cardElement.addEventListener('click', (e) => {
-                // Si la tarjeta ya está activa (en el centro), abre el modal
-                if (cardElement.classList.contains('active')) {
-                    openModalCallback();
-                } else {
-                    // Si no está activa, delegamos el evento al carrusel para que la centre
-                    // (Asumiendo que tu módulo de carrusel maneja la selección por índice o clases)
-                    const index = cardElement.getAttribute('data-index');
-                    if (window.selectCarouselCard && index !== null) {
-                        window.selectCarouselCard(parseInt(index));
-                    }
-                }
-            });
-        };
-
-        handleCardInteraction(subcardProfiles, () => this.openProfileModal());
-        handleCardInteraction(subcardVehicle, () => this.openVehicleModal());
-        handleCardInteraction(subcardGarageConfig, () => this.openSettingsModal());
-
-        // --- 3. CIERRE DE MODALES ---
         if (btnCloseProfile) btnCloseProfile.addEventListener('click', () => modalProfile.style.display = 'none');
         if (btnCloseVehicle) btnCloseVehicle.addEventListener('click', () => modalVehicle.style.display = 'none');
-        if (btnCloseGarageConfig) btnCloseGarageConfig.addEventListener('click', () => modalGarageConfig.style.display = 'none');
 
-        [modalProfile, modalVehicle, modalGarageConfig].forEach(m => {
+        [modalProfile, modalVehicle].forEach(m => {
             if (m) {
                 m.addEventListener('click', (e) => {
                     if (e.target === m) m.style.display = 'none';
@@ -72,140 +37,214 @@ export const garageUI = {
             }
         });
 
-        // --- 4. SELECCIÓN DE AVATAR PRESET ---
-        document.querySelectorAll('.avatar-option').forEach(img => {
-            img.addEventListener('click', (e) => {
-                document.querySelectorAll('.avatar-option').forEach(i => i.style.borderColor = 'var(--card-border)');
-                e.target.style.borderColor = 'var(--hud-primary)';
-                if (profileAvatarUrl) profileAvatarUrl.value = e.target.src;
-            });
-        });
-
-        // --- 5. GUARDAR PERFIL DEL PILOTO ---
         if (btnSaveProfile) {
             btnSaveProfile.addEventListener('click', async () => {
                 try {
                     btnSaveProfile.disabled = true;
                     const newName = profilePilotName?.value.trim();
                     const newAvatar = profileAvatarUrl?.value.trim();
+                    if (!newName) throw new Error('El call-sign no puede quedar vacío.');
 
-                    const { error } = await authService.updateProfile({
+                    const { data: sessionData, error: sessionError } = await authService.getSession();
+                    if (sessionError) throw sessionError;
+                    if (!sessionData.session?.user) {
+                        throw new Error('Inicia sesión antes de actualizar tu perfil.');
+                    }
+
+                    const { data, error } = await authService.updateProfile({
                         pilot_name: newName,
                         avatar_url: newAvatar
                     });
-
                     if (error) throw error;
 
                     const userLabel = document.getElementById('auth-user-label');
-                    if (userLabel && newName) userLabel.textContent = newName;
-                    if (hudAvatarImg && newAvatar) hudAvatarImg.src = newAvatar;
+                    if (userLabel) userLabel.textContent = data.user?.user_metadata?.pilot_name || newName;
+                    if (hudAvatarImg) {
+                        hudAvatarImg.src = data.user?.user_metadata?.avatar_url || './assets/componentes/7a5e6.svg';
+                    }
 
+                    const profileCardName = document.getElementById('profile-card-name');
+                    const activeCallsignInput = document.getElementById('active-callsign-display');
+                    if (profileCardName) profileCardName.textContent = newName;
+                    if (activeCallsignInput) activeCallsignInput.value = newName;
+
+                    if (profileStatus) profileStatus.textContent = 'PERFIL ACTUALIZADO.';
                     modalProfile.style.display = 'none';
                 } catch (err) {
-                    console.error("Error al actualizar perfil:", err);
-                    alert("Error al guardar el perfil: " + err.message);
+                    console.error('Error al actualizar perfil:', err);
+                    if (profileStatus) profileStatus.textContent = err.message || 'ERROR AL GUARDAR EL PERFIL.';
                 } finally {
                     btnSaveProfile.disabled = false;
                 }
             });
         }
 
-        // --- 6. MANEJO DE COLORES EN MODAL DE GARAJE ---
-        document.querySelectorAll('.color-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const colorKey = e.target.getAttribute('data-color');
-                const currentModel = selectGarageCarModel?.value || storageService.getCarKey() || 'fiat_palio';
-                storageService.setCarColor(colorKey);
-                if (window.applyVehicleGarage) window.applyVehicleGarage(currentModel, colorKey);
-            });
-        });
-
-        // --- 7. APLICAR CONFIGURACIÓN DE GARAJE (MODAL 3) ---
-        if (btnSaveGarageConfig) {
-            btnSaveGarageConfig.addEventListener('click', () => {
-                const chosenCar = selectGarageCarModel ? selectGarageCarModel.value : 'fiat_palio';
-                const currentColor = storageService.getCarColor() || 'rojo';
-                
-                storageService.setCarKey(chosenCar);
-                if (window.applyVehicleGarage) window.applyVehicleGarage(chosenCar, currentColor);
-
-                if (selectThemeMode && selectThemeMode.value) {
-                    document.body.className = selectThemeMode.value;
-                    storageService.setTheme(selectThemeMode.value);
-                } else {
-                    document.body.className = '';
-                    storageService.setTheme('');
-                }
-                modalGarageConfig.style.display = 'none';
-            });
-        }
-
-        // --- 8. GUARDAR FICHA TÉCNICA DEL VEHÍCULO (MODAL 2) ---
         if (btnSaveVehicle) {
             btnSaveVehicle.addEventListener('click', async () => {
                 try {
                     btnSaveVehicle.disabled = true;
-                    if (statusMsg) statusMsg.textContent = "GUARDANDO TELEMETRÍA...";
+                    if (statusMsg) statusMsg.textContent = 'GUARDANDO TELEMETRÍA...';
 
-                    const selectedKey = specCarModel ? specCarModel.value : 'fiat_palio';
-                    const currentColor = storageService.getCarColor() || 'rojo';
+                    const selectedKey = specCarModel ? specCarModel.value : DEFAULT_CAR_KEY;
+                    const selectedCar = CAR_CATALOG[selectedKey];
+                    if (!selectedCar) throw new Error('Selecciona un vehículo válido.');
 
-                    if (window.applyVehicleGarage) window.applyVehicleGarage(selectedKey, currentColor);
+                    const mileage = Number(specMileage?.value);
+                    const nextService = Number(specNextService?.value);
+                    if (!Number.isFinite(mileage) || mileage < 0 ||
+                        !Number.isFinite(nextService) || nextService < 0) {
+                        throw new Error('El odómetro y el próximo servicio deben ser valores válidos.');
+                    }
+
+                    const { data: sessionData, error: sessionError } = await authService.getSession();
+                    if (sessionError) throw sessionError;
+                    if (!sessionData.session?.user) {
+                        throw new Error('Inicia sesión antes de guardar la telemetría.');
+                    }
 
                     await vehicleService.saveVehicleSpec({
                         modelName: selectedKey,
-                        engineType: specEngineType?.value || '',
-                        oilType: specOilType?.value || '',
-                        currentMileage: specMileage?.value || 0,
-                        nextServiceKm: specNextService?.value || 0
+                        engineType: specEngineType?.value.trim() || '',
+                        oilType: specOilType?.value.trim() || '',
+                        currentMileage: mileage,
+                        nextServiceKm: nextService
                     });
 
-                    const mileageLabel = document.getElementById('hud-mileage-val');
-                    const serviceLabel = document.getElementById('hud-service-val');
-                    if (mileageLabel && specMileage?.value) mileageLabel.textContent = `${specMileage.value} km`;
-                    if (serviceLabel && specNextService?.value) serviceLabel.textContent = `${specNextService.value} km`;
+                    const currentColor = storageService.getCarColor() || DEFAULT_PAINT_KEY;
+                    if (window.applyVehicleGarage) window.applyVehicleGarage(selectedKey, currentColor);
 
-                    if (statusMsg) statusMsg.textContent = "TELEMETRÍA GUARDADA CON ÉXITO.";
+                    const cardVehicleTitle = document.getElementById('card-vehicle-title');
+                    const cardEngine = document.getElementById('card-spec-engine');
+                    const cardOil = document.getElementById('card-spec-oil');
+                    const cardMileage = document.getElementById('card-spec-odo');
+                    const cardService = document.getElementById('card-spec-service');
+                    if (cardVehicleTitle) cardVehicleTitle.textContent = selectedCar.name.toUpperCase();
+                    if (cardEngine) cardEngine.textContent = specEngineType?.value.trim() || '—';
+                    if (cardOil) cardOil.textContent = specOilType?.value.trim() || '—';
+                    if (cardMileage) cardMileage.textContent = `${mileage.toLocaleString()} KM`;
+                    if (cardService) cardService.textContent = `${nextService.toLocaleString()} KM`;
+
+                    if (statusMsg) statusMsg.textContent = 'TELEMETRÍA GUARDADA CON ÉXITO.';
                     setTimeout(() => {
                         modalVehicle.style.display = 'none';
                         if (statusMsg) statusMsg.textContent = "";
                     }, 600);
 
                 } catch (err) {
-                    console.error("Error al guardar vehículo:", err);
-                    if (statusMsg) statusMsg.textContent = err.message || "ERROR AL GUARDAR DATOS.";
+                    console.error('Error al guardar vehículo:', err);
+                    if (statusMsg) statusMsg.textContent = err.message || 'ERROR AL GUARDAR DATOS.';
                 } finally {
                     btnSaveVehicle.disabled = false;
                 }
             });
         }
 
-        // --- 9. MÉTODOS PÚBLICOS DE APERTURA ---
         this.openProfileModal = async () => {
-            if (modalProfile) modalProfile.style.display = 'flex';
-            const { data } = await authService.getSession();
-            const user = data?.session?.user;
-            if (profilePilotName) profilePilotName.value = user?.user_metadata?.pilot_name || 'Invitado';
-            if (profileEmail) profileEmail.value = user?.email || 'Sin sesión activa';
-            if (profileAvatarUrl) profileAvatarUrl.value = user?.user_metadata?.avatar_url || '';
+            try {
+                const { data, error } = await authService.getSession();
+                if (error) throw error;
+                const user = data?.session?.user;
+                if (!user) {
+                    document.dispatchEvent(new CustomEvent('overdrive:open-auth'));
+                    return;
+                }
+
+                if (profilePilotName) profilePilotName.value = user.user_metadata?.pilot_name || '';
+                if (profileEmail) profileEmail.value = user.email || '';
+                if (profileAvatarUrl) profileAvatarUrl.value = user.user_metadata?.avatar_url || '';
+                if (profileStatus) profileStatus.textContent = '';
+                if (modalProfile) modalProfile.style.display = 'flex';
+            } catch (err) {
+                console.error('Error al cargar el perfil:', err);
+                if (profileStatus) profileStatus.textContent = err.message || 'NO SE PUDO CARGAR EL PERFIL.';
+                if (modalProfile) modalProfile.style.display = 'flex';
+            }
         };
 
         this.openVehicleModal = async () => {
-            if (modalVehicle) modalVehicle.style.display = 'flex'; // Apertura instantánea
-            const data = await vehicleService.getActiveVehicleData();
-            if (data) {
-                if (data.model_name && specCarModel) specCarModel.value = data.model_name;
-                if (specEngineType) specEngineType.value = data.engine_type || '';
-                if (specOilType) specOilType.value = data.oil_type || '';
-                if (specMileage) specMileage.value = data.current_mileage || '';
-                if (specNextService) specNextService.value = data.next_service_km || '';
+            if (modalVehicle) modalVehicle.style.display = 'flex';
+            if (statusMsg) statusMsg.textContent = 'CARGANDO TELEMETRÍA...';
+            try {
+                const data = await vehicleService.getActiveVehicleData();
+                if (data) {
+                    const modelKey = Object.hasOwn(CAR_CATALOG, data.model_name)
+                        ? data.model_name
+                        : Object.entries(CAR_CATALOG).find(([, car]) => car.name === data.model_name)?.[0];
+                    if (modelKey && specCarModel) specCarModel.value = modelKey;
+                    if (specEngineType) specEngineType.value = data.engine_type || '';
+                    if (specOilType) specOilType.value = data.oil_type || '';
+                    if (specMileage) specMileage.value = data.current_mileage ?? '';
+                    if (specNextService) specNextService.value = data.next_service_km ?? '';
+
+                    const selectedCar = CAR_CATALOG[modelKey || DEFAULT_CAR_KEY];
+                    const cardVehicleTitle = document.getElementById('card-vehicle-title');
+                    const cardEngine = document.getElementById('card-spec-engine');
+                    const cardOil = document.getElementById('card-spec-oil');
+                    const cardMileage = document.getElementById('card-spec-odo');
+                    const cardService = document.getElementById('card-spec-service');
+                    if (cardVehicleTitle) cardVehicleTitle.textContent = selectedCar.name.toUpperCase();
+                    if (cardEngine) cardEngine.textContent = data.engine_type || '—';
+                    if (cardOil) cardOil.textContent = data.oil_type || '—';
+                    if (cardMileage) cardMileage.textContent = `${Number(data.current_mileage || 0).toLocaleString()} KM`;
+                    if (cardService) cardService.textContent = `${Number(data.next_service_km || 0).toLocaleString()} KM`;
+                }
+                if (statusMsg) statusMsg.textContent = '';
+            } catch (err) {
+                console.error('Error al cargar la ficha técnica:', err);
+                if (statusMsg) statusMsg.textContent = err.message || 'NO SE PUDO CARGAR LA TELEMETRÍA.';
             }
         };
 
         this.openSettingsModal = () => {
-            if (selectGarageCarModel) selectGarageCarModel.value = storageService.getCarKey() || 'fiat_palio';
-            if (selectThemeMode) selectThemeMode.value = storageService.getTheme() !== 'cyan' ? storageService.getTheme() : '';
-            if (modalGarageConfig) modalGarageConfig.style.display = 'flex';
+            document.querySelector('#car-model-selector button')?.focus();
         };
+
+        const carModelButtons = document.querySelectorAll('#car-model-selector button');
+        carModelButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                carModelButtons.forEach(b => b.classList.remove('is-active'));
+                const targetBtn = e.currentTarget;
+                targetBtn.classList.add('is-active');
+                const carKey = targetBtn.getAttribute('data-car');
+                const currentColor = storageService.getCarColor() || DEFAULT_PAINT_KEY;
+                
+                // Solo cambia el material/modelo de fondo en el taller, NO el nombre técnico de la Tarjeta 02
+                storageService.setCarKey(carKey);
+                if (window.applyVehicleGarage) window.applyVehicleGarage(carKey, currentColor);
+            });
+        });
+
+        const paintButtons = document.querySelectorAll('#car-paint-selector button');
+        paintButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                paintButtons.forEach(b => b.classList.remove('is-active'));
+                const targetBtn = e.currentTarget;
+                targetBtn.classList.add('is-active');
+                const colorKey = targetBtn.getAttribute('data-color');
+                const currentCar = storageService.getCarKey() || DEFAULT_CAR_KEY;
+                storageService.setCarColor(colorKey);
+                if (window.applyVehicleGarage) window.applyVehicleGarage(currentCar, colorKey);
+            });
+        });
+
+        const themeButtons = document.querySelectorAll('#ui-theme-selector button');
+        themeButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                themeButtons.forEach(b => b.classList.remove('is-active'));
+                
+                // e.currentTarget garantiza que agarremos el botón y no el <i> interno
+                const targetBtn = e.currentTarget;
+                targetBtn.classList.add('is-active');
+                
+                const themeName = targetBtn.getAttribute('data-theme');
+                
+                if (themeName) {
+                    themeUI.applyTheme(themeName);
+                    storageService.setTheme(themeName);
+                }
+            });
+        });
+
+        document.addEventListener('overdrive:open-profile', () => this.openProfileModal());
     }
 };

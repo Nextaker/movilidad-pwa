@@ -22,6 +22,7 @@ export const authUI = {
         if (!modal || !openButton || !form) return;
 
         let isRegisterMode = false;
+        let currentUser = null;
 
         const setMessage = (msg, isError = false) => {
             if (!status) return;
@@ -30,21 +31,29 @@ export const authUI = {
         };
 
         const setUser = (user) => {
+            currentUser = user;
             if (userLabel) {
                 userLabel.textContent = user?.user_metadata?.pilot_name || user?.email || 'Invitado';
             }
-            if (hudAvatarImg && user?.user_metadata?.avatar_url) {
-                hudAvatarImg.src = user.user_metadata.avatar_url;
+            if (hudAvatarImg) {
+                hudAvatarImg.src = user?.user_metadata?.avatar_url || './assets/componentes/7a5e6.svg';
             }
-            if (openButton) openButton.style.display = user ? 'none' : 'inline-flex';
-            if (logoutButton) logoutButton.style.display = user ? 'inline-flex' : 'none';
+            const openButtonLabel = openButton.querySelector('span');
+            if (openButtonLabel) openButtonLabel.textContent = user ? 'PERFIL' : 'ACCEDER';
+            if (logoutButton) logoutButton.hidden = !user;
         };
 
         const setMode = (registerMode) => {
             isRegisterMode = registerMode;
-            if (tabLogin) tabLogin.classList.toggle('active', !registerMode);
-            if (tabRegister) tabRegister.classList.toggle('active', registerMode);
-            if (groupPilotName) groupPilotName.style.display = registerMode ? 'block' : 'none';
+            if (tabLogin) {
+                tabLogin.classList.toggle('active', !registerMode);
+                tabLogin.setAttribute('aria-selected', String(!registerMode));
+            }
+            if (tabRegister) {
+                tabRegister.classList.toggle('active', registerMode);
+                tabRegister.setAttribute('aria-selected', String(registerMode));
+            }
+            if (groupPilotName) groupPilotName.hidden = !registerMode;
             if (submitButton) submitButton.textContent = registerMode ? 'REGISTRAR PILOTO ➔' : 'INICIALIZAR SISTEMA ➔';
             setMessage('');
         };
@@ -54,10 +63,19 @@ export const authUI = {
 
         if (openButton) {
             openButton.addEventListener('click', () => {
+                if (currentUser) {
+                    document.dispatchEvent(new CustomEvent('overdrive:open-profile'));
+                    return;
+                }
                 setMessage('');
                 modal.style.display = 'flex';
             });
         }
+
+        document.addEventListener('overdrive:open-auth', () => {
+            setMessage('');
+            modal.style.display = 'flex';
+        });
 
         if (closeButton) {
             closeButton.addEventListener('click', () => {
@@ -71,13 +89,16 @@ export const authUI = {
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            submitButton.disabled = true;
+            if (submitButton) submitButton.disabled = true;
             setMessage('CONECTANDO CON LA RED...');
 
             try {
-                const email = emailInput.value.trim();
-                const password = passwordInput.value;
+                const email = emailInput?.value.trim();
+                const password = passwordInput?.value;
                 const pilotName = pilotNameInput ? pilotNameInput.value.trim() : '';
+                if (!email || !password) {
+                    throw new Error('Completa el correo y la contraseña.');
+                }
 
                 const { data, error } = isRegisterMode
                     ? await authService.signUp(email, password, pilotName)
@@ -97,16 +118,26 @@ export const authUI = {
                 }
             } catch (err) {
                 console.error(err);
-                setMessage('ERROR DEL SISTEMA: SIN CONEXIÓN.', true);
+                setMessage(err.message || 'ERROR DEL SISTEMA: SIN CONEXIÓN.', true);
             } finally {
-                submitButton.disabled = false;
+                if (submitButton) submitButton.disabled = false;
             }
         });
 
         if (logoutButton) {
             logoutButton.addEventListener('click', async () => {
-                await authService.logout();
-                setUser(null);
+                logoutButton.disabled = true;
+                try {
+                    const { error } = await authService.logout();
+                    if (error) throw error;
+                    setUser(null);
+                } catch (err) {
+                    console.error('Error al cerrar sesión:', err);
+                    setMessage(err.message || 'No se pudo cerrar la sesión.', true);
+                    modal.style.display = 'flex';
+                } finally {
+                    logoutButton.disabled = false;
+                }
             });
         }
 
@@ -114,9 +145,15 @@ export const authUI = {
         authService.onAuthStateChange((_event, session) => setUser(session?.user ?? null));
 
         // Cargar sesión inicial
-        authService.getSession().then(({ data }) => {
-            setUser(data?.session?.user ?? null);
-        });
+        authService.getSession()
+            .then(({ data, error }) => {
+                if (error) throw error;
+                setUser(data?.session?.user ?? null);
+            })
+            .catch((err) => {
+                console.error('Error al recuperar la sesión:', err);
+                setMessage(err.message || 'No se pudo recuperar la sesión.', true);
+            });
 
         setMode(false);
     }

@@ -1,53 +1,68 @@
-// js/ui/audioPlayerUI.js - Widget de Audio
+// js/ui/audioPlayerUI.js - Control limpio del reproductor de audio integrado en el HUD
 export const audioPlayerUI = {
     init() {
-        const musicWidget = document.createElement('div');
-        musicWidget.id = 'hud-audio-player';
-        musicWidget.innerHTML = `
-            <div class="audio-info-ticker">
-                <span class="audio-status-tag">🎵 HUD AUDIO</span>
-                <span class="audio-track-name">Cyberpunk Synthwave - Overdrive Track 01</span>
-            </div>
-            <button id="btn-toggle-audio">PLAY</button>
-        `;
-        document.body.appendChild(musicWidget);
-
+        const btnToggle = document.getElementById('btn-toggle-audio');
+        const waveform = document.getElementById('audio-waveform');
+        const settingsToggle = document.getElementById('btn-audio-settings');
+        const settingsPanel = document.getElementById('audio-settings');
+        const volumeControl = document.getElementById('audio-volume');
+        const volumeValue = document.getElementById('audio-volume-value');
+        
         const audio = new Audio('./assets/audio/cyberpunk-bg.mp3');
         audio.loop = true;
-        audio.volume = 0.3;
-
-        const btnToggle = document.getElementById('btn-toggle-audio');
-        let isPlaying = false;
+        audio.volume = Number(volumeControl?.value ?? 0.3);
 
         const reproducir = () => {
-            audio.play().then(() => {
-                isPlaying = true;
-                btnToggle.textContent = 'PAUSE';
-                btnToggle.style.background = 'var(--hud-accent)';
-                btnToggle.style.color = '#fff';
-            }).catch(err => console.log("Autoplay bloqueado:", err));
+            audio.play().catch((err) => {
+                console.error('No se pudo reproducir el audio:', err);
+            });
         };
 
         const pausar = () => {
             audio.pause();
-            isPlaying = false;
-            btnToggle.textContent = 'PLAY';
-            btnToggle.style.background = 'var(--hud-primary)';
-            btnToggle.style.color = '#050811';
         };
 
-        btnToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            isPlaying ? pausar() : reproducir();
-        });
+        const sincronizarEstado = () => {
+            const isPlaying = !audio.paused;
+            btnToggle?.classList.toggle('is-playing', isPlaying);
+            btnToggle?.setAttribute('aria-pressed', String(isPlaying));
+            btnToggle?.setAttribute('aria-label', isPlaying ? 'Pausar audio' : 'Reproducir audio');
+            waveform?.classList.toggle('is-playing', isPlaying);
+        };
 
-        const unlockAudio = () => {
-            if (!isPlaying) reproducir();
+        audio.addEventListener('play', sincronizarEstado);
+        audio.addEventListener('pause', sincronizarEstado);
+
+        if (btnToggle) {
+            btnToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                audio.paused ? reproducir() : pausar();
+            });
+        }
+
+        const unlockAudio = (event) => {
+            const activatedPlayButton = event.target instanceof Element
+                && event.target.closest('#btn-toggle-audio');
             window.removeEventListener('pointerdown', unlockAudio);
             window.removeEventListener('touchstart', unlockAudio);
+            if (!activatedPlayButton && audio.paused) reproducir();
         };
 
-        window.addEventListener('pointerdown', unlockAudio, { once: true });
-        window.addEventListener('touchstart', unlockAudio, { once: true });
+        window.addEventListener('pointerdown', unlockAudio);
+        if (!('PointerEvent' in window)) {
+            window.addEventListener('touchstart', unlockAudio);
+        }
+
+        settingsToggle?.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const isExpanded = settingsToggle.getAttribute('aria-expanded') === 'true';
+            settingsToggle.setAttribute('aria-expanded', String(!isExpanded));
+            if (settingsPanel) settingsPanel.hidden = isExpanded;
+        });
+
+        volumeControl?.addEventListener('input', () => {
+            audio.volume = Number(volumeControl.value);
+            if (volumeValue) volumeValue.value = `${Math.round(audio.volume * 100)}%`;
+        });
     }
 };

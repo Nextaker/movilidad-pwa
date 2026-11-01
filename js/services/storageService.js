@@ -1,3 +1,5 @@
+import { DEFAULT_CAR_KEY, DEFAULT_PAINT_KEY } from '../config.js';
+
 // js/services/storageService.js - Manejo de almacenamiento local
 export const storageService = {
     getTheme() {
@@ -13,13 +15,13 @@ export const storageService = {
         localStorage.setItem('overdrive_grid_mode', isGrid);
     },
     getCarKey() {
-        return localStorage.getItem('user_car_key') || 'fiat_palio';
+        return localStorage.getItem('user_car_key') || DEFAULT_CAR_KEY;
     },
     setCarKey(key) {
         localStorage.setItem('user_car_key', key);
     },
     getCarColor() {
-        return localStorage.getItem('user_car_color') || 'rojo';
+        return localStorage.getItem('user_car_color') || DEFAULT_PAINT_KEY;
     },
     setCarColor(color) {
         localStorage.setItem('user_car_color', color);

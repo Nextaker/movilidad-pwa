@@ -1,4 +1,4 @@
-// js/services/mapService.js - Control fluído de Leaflet con tarjetas ciseladas y diamante de estación
+// js/services/mapService.js - Control fluido con clases tácticas de Figma
 import { supabase } from './supabaseClient.js';
 import { storageService } from './storageService.js';
 import { CONFIG } from '../config.js';
@@ -13,22 +13,26 @@ const TILE_URLS = {
     leaflet_sat: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
 };
 
-function createStationSvg(statusText, colorStatus, stationName) {
+// Generador de tarjeta táctica de estación basado en las clases de Figma
+function createStationHtml(statusText, statusClass, stationName) {
     return `
-        <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;">
-            <div class="hud-station-card">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${colorStatus}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="3" y1="22" x2="15" y2="22"/>
-                    <line x1="4" y1="9" x2="14" y2="9"/>
-                    <path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"/>
-                    <path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5"/>
-                </svg>
-                <div>
-                    <span style="font-weight: bold; display: block; line-height: 1.1; color: #fff;">${stationName}</span>
-                    <span style="color: ${colorStatus}; font-size: 8px; font-weight: 800; letter-spacing: 0.5px;">${statusText}</span>
+        <div class="station-marker">
+            <div class="station-card">
+                <div class="station-card__rail">
+                    <span>SECTOR // PARAGUANÁ</span>
+                    <i>FUEL // 01</i>
+                </div>
+                <strong>${stationName}</strong>
+                <div class="station-status ${statusClass}">
+                    <i></i><span>${statusText}</span>
+                </div>
+                <div class="station-data">
+                    <span><small>ESTADO</small>ACTIVO</span>
+                    <span><small>RED</small>ONLINE</span>
                 </div>
             </div>
-            <div class="diamond-pin" style="margin-top: 2px;"></div>
+            <div class="station-anchor"></div>
+            <div class="station-pin"><i></i></div>
         </div>
     `;
 }
@@ -36,7 +40,7 @@ function createStationSvg(statusText, colorStatus, stationName) {
 export const mapService = {
     initMap(containerId = 'map') {
         if (!map) {
-            map = L.map(containerId).setView(CONFIG.DEFAULT_COORDS, CONFIG.DEFAULT_ZOOM);
+            map = L.map(containerId, { zoomControl: false }).setView(CONFIG.DEFAULT_COORDS, CONFIG.DEFAULT_ZOOM);
             this.applyTileLayer(currentEngine);
             this.loadGasStations();
         }
@@ -58,13 +62,15 @@ export const mapService = {
         tileLayer = L.tileLayer(TILE_URLS[engine], { attribution, maxZoom: 19 }).addTo(map);
         currentEngine = engine;
         storageService.setMapEngine(engine);
-    },
 
-    toggleEngine(labelElement) {
-        const nextEngine = currentEngine === 'leaflet_vec' ? 'leaflet_sat' : 'leaflet_vec';
-        this.applyTileLayer(nextEngine);
-        if (labelElement) {
-            labelElement.textContent = nextEngine === 'leaflet_vec' ? 'Leaflet Vector' : 'Leaflet Satélite';
+        // Aplicar clase visual al contenedor del mapa si es satélite
+        const mapVisualContainer = document.querySelector('.map-visual');
+        if (mapVisualContainer) {
+            if (engine === 'leaflet_sat') {
+                mapVisualContainer.classList.add('map-visual--satellite');
+            } else {
+                mapVisualContainer.classList.remove('map-visual--satellite');
+            }
         }
     },
 
@@ -76,15 +82,20 @@ export const mapService = {
 
             stations.forEach(station => {
                 let estadoTexto = "OPERATIVA";
-                let colorEstado = "#00ff66";
-                if (station.status === 'closed') { estadoTexto = "CERRADA"; colorEstado = "#ff0055"; }
-                if (station.status === 'no_fuel') { estadoTexto = "SIN COMBUSTIBLE"; colorEstado = "#ffaa00"; }
+                let statusClass = "station-status--online";
+                if (station.status === 'closed') { 
+                    estadoTexto = "CERRADA"; 
+                    statusClass = "station-status--offline"; 
+                } else if (station.status === 'no_fuel') { 
+                    estadoTexto = "SIN COMBUSTIBLE"; 
+                    statusClass = "station-status--warning"; 
+                }
 
                 const stationIcon = L.divIcon({
-                    className: 'cyber-station-marker',
-                    html: createStationSvg(estadoTexto, colorEstado, station.name),
-                    iconSize: [130, 60], 
-                    iconAnchor: [65, 0]
+                    className: 'custom-station-icon',
+                    html: createStationHtml(estadoTexto, statusClass, station.name),
+                    iconSize: [158, 120], 
+                    iconAnchor: [79, 110]
                 });
 
                 L.marker([station.latitude, station.longitude], { icon: stationIcon }).addTo(map);
@@ -97,16 +108,27 @@ export const mapService = {
     trackUserLocation() {
         if (!map) return;
 
-        const userPulseIcon = L.divIcon({
-            className: 'user-location-marker',
-            html: '<div class="gps-circle-pulse"></div>',
-            iconSize: [26, 26],
-            iconAnchor: [13, 13]
+        // Icono de radar y crosshair exacto del CSS de Figma
+        const userRadarIcon = L.divIcon({
+            className: 'custom-user-icon',
+            html: `
+                <div class="gps-location">
+                    <div class="gps-ring"></div>
+                    <div class="gps-ring gps-ring--two"></div>
+                    <div class="gps-ring gps-ring--three"></div>
+                    <div class="gps-crosshair">
+                        <i></i>
+                    </div>
+                    <em>PUNTO FIJO // LIVE</em>
+                </div>
+            `,
+            iconSize: [64, 64],
+            iconAnchor: [32, 32]
         });
 
         if (!userMarker) {
-            userMarker = L.marker(CONFIG.DEFAULT_COORDS, { icon: userPulseIcon, zIndexOffset: 1000 }).addTo(map)
-                .bindPopup("<b>¡Tu Ubicación Actual!</b>");
+            userMarker = L.marker(CONFIG.DEFAULT_COORDS, { icon: userRadarIcon, zIndexOffset: 1000 }).addTo(map)
+                .bindPopup("<b>¡Tu Ubicación Actual (Netspace)!</b>");
         }
 
         if ("geolocation" in navigator) {

@@ -3,409 +3,569 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Overdrive</title>
-    
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    
-    <!-- Estilos HUD (Carga tu style.css maestro modularizado) -->
+    <title>Overdrive — HUD V2</title>
+    <link rel="manifest" href="./manifest.json">
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
+    <!-- Leaflet CSS para el Mapa -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
-<body>
+<body class="theme-cyan">
 
-<!-- PANTALLA DE ARRANQUE / BOOT SCREEN (ESTILO VIDEOJUEGO) -->
-    <div id="boot-screen" class="boot-overlay">
-        <div class="boot-terminal-box">
-            <div class="boot-logo-glitch">OVERDRIVE // HUD</div>
-            <p class="boot-status-text" id="boot-status-msg">VERIFICANDO NÚCLEO SUPABASE...</p>
-            <div class="boot-progress-bar"><div class="boot-progress-fill" id="boot-fill"></div></div>
-            <button class="neon-btn primary boot-enter-btn" id="btn-boot-enter" style="display: none;">
-                [ INICIALIZAR MOTOR ]
+    <!-- 1. PANTALLA DE ARRANQUE / BOOT SCREEN (RESTAURADA) -->
+    <div id="boot-screen" class="boot">
+        <div class="scanlines"></div>
+        <div class="boot__frame">
+            <div class="boot__rail">
+                <span>OD-7 // IGNITION SEQUENCE</span>
+                <b class="status-live">SYS_ONLINE</b>
+            </div>
+            <div class="boot__brand">
+                <img src="./assets/componentes/65a06.svg" alt="Overdrive Logo">
+                <div>
+                    <p data-text="OVERDRIVE">OVERDRIVE</p>
+                    <span>// HUD</span>
+                </div>
+            </div>
+            <div class="boot__telemetry">
+                <span>CORE SYSTEM INTEGRITY</span>
+                <b id="boot-percent">100%</b>
+            </div>
+            <div class="progress-track boot__progress" aria-label="Initialization">
+                <i id="boot-fill" style="width: 0%;"></i>
+                <b id="boot-marker" style="left: 0%;"></b>
+            </div>
+            <div class="boot__log">
+                <span><b>[01]</b> <em>[ OK ]</em> <b>DRIVER IDENTITY LINK</b></span>
+                <span><b>[02]</b> <em>[ OK ]</em> <b>MOTOR CONTROL BUS</b></span>
+                <span><b>[03]</b> <em class="status-live">[ READY ]</em> <b id="boot-status-msg">NEURAL GARAGE UPLINK</b></span>
+            </div>
+            <button class="ignition" id="btn-boot-enter" type="button" style="display: none;">
+                <span>[ INICIALIZAR MOTOR ]</span>
+                <i>→</i>
+            </button>
+            <div class="boot__footer">
+                <span>SYS_ONLINE // 256-BIT</span>
+                <span>BUILD_02.26.77</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. CONTENEDOR DEL MAPA (Oculto por defecto) -->
+    <div id="map-view" style="display: none; width: 100vw; height: 100vh; position: relative; background: #050811; z-index: 999;">
+        <div id="map" style="width: 100%; height: 100%;"></div>
+        
+        <!-- Controles flotantes superiores con estilo HUD -->
+        <div style="position: absolute; top: 20px; left: 70px; z-index: 1000; display: flex; gap: 10px;">
+            <button id="btn-back-garage" class="ignition" style="width: auto; padding: 0 18px; min-height: 40px; cursor: pointer;">
+                [ ← VOLVER AL GARAJE ]
+            </button>
+            <button id="btn-toggle-map-layer" class="ignition" style="width: auto; padding: 0 18px; min-height: 40px; cursor: pointer; background: #030810; color: var(--cyan);">
+                [ CAMBIAR VISTA MAPA ]
             </button>
         </div>
     </div>
 
-<div id="orientation-warning" class="orientation-overlay" style="display:none;">
-    <div class="warning-content">
-        <button class="close-warning-btn" id="btn-close-warning">✕ Continuar en Vertical</button>
-        <div class="phone-rotate-icon">📱🔄</div>
-        <h2>Mejor en Horizontal</h2>
-        <p>Para disfrutar del HUD 3D y el garaje al máximo, te sugerimos girar tu dispositivo.</p>
-    </div>
-</div>
+    <!-- 3. CONTENEDOR PRINCIPAL DEL GARAJE HUD -->
+    <div id="garage-view" style="display: flex; flex-direction: column; width: 100vw; height: 100vh;">
+        <main class="hud">
+            <div class="hud__background"></div>
+            <div class="scanlines"></div>
 
-    <!-- VISTA 1: EL GARAJE HUD -->
-    <div id="garage-view" class="garage-container">
-        
-        <!-- HEADER HUD -->
-        <header class="hud-header">
-            <div class="hud-left">
-                <div class="hud-avatar-container">
-                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" alt="Avatar" class="hud-avatar" id="hud-avatar-img">
-                </div>
-                <div class="hud-info-block">
-                    <div class="hud-top-line">
-                        Piloto: <strong id="auth-user-label">Invitado</strong> 
-                        <span class="hud-separator">|</span> 
-                        Vehículo: <span class="highlight" id="display-car-name">Fiat Palio 1.8</span> 
-                        <span class="hud-separator">|</span> 
-                        Último Check: <span class="highlight">Hoy</span>
+            <!-- Barra Superior / Topbar -->
+            <header class="topbar">
+                <div class="pilot-lockup">
+                    <div class="avatar">
+                        <img id="hud-avatar-img" src="./assets/componentes/7a5e6.svg" alt="Pilot Avatar">
                     </div>
+                    <div>
+                        <span>PILOT CALL-SIGN</span>
+                        <strong id="auth-user-label">NIGHT//RUNNER</strong>
+                        <small>ID_8F4A // VERIFIED</small>
+                    </div>
+                </div>
+
+                <div class="vehicle-strip">
+                    <div>
+                        <span>ODOMETER</span>
+                        <strong id="hud-mileage-val">48,209 <i>KM</i></strong>
+                    </div>
+                    <div>
+                        <span>ENGINE</span>
+                        <strong class="nominal">NOMINAL</strong>
+                    </div>
+                    <div>
+                        <span>SERVICE</span>
+                        <strong id="hud-service-val">1,284 <i>KM</i></strong>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <button id="btn-auth-open" title="Autenticación">
+                        <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg>
+                        <span>ACCESAR</span>
+                    </button>
+                    <button id="btn-auth-logout" type="button" title="Cerrar sesión" hidden>
+                        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                        <span>SALIR</span>
+                    </button>
+                    <button id="subcard-garage-config" title="Alternar Vista Garaje / Menú">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        <span>GARAJE</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Deck Central / Carrusel de Módulos -->
+            <section class="command-deck" aria-label="Garage HUD carousel">
+                <div class="deck-heading">
+                    <div>
+                        <p id="deck-subtitle">OVERDRIVE // GARAGE CORE</p>
+                        <h1 id="deck-title">SELECT SYSTEM MODULE</h1>
+                    </div>
+                    <div class="deck-count">
+                        <b id="active-card-num">01/05</b>
+                    </div>
+                </div>
+
+                <!-- Carrusel 3D Holográfico -->
+                <div class="carousel" id="main-carousel">
                     
-                    <div class="hud-metrics-row">
-                        <div class="metric-item">
-                            <span>NIVEL</span>
-                            <strong>#1</strong>
+                    <!-- ========================================== -->
+                    <!-- GRUPO 1: MENÚ PRINCIPAL (5 TARJETAS)       -->
+                    <!-- ========================================== -->
+                    <article class="holo-card is-active main-card" data-index="0" id="subcard-map">
+                        <div class="card-rail">
+                            <span>CARD 01</span>
+                            <b>NAVIGATIONAL MATRIX</b>
+                            <i>GPS // 01</i>
                         </div>
-                        <div class="divider-vertical"></div>
-                        <div class="metric-item">
-                            <span>KILOMETRAJE</span>
-                            <strong id="hud-mileage-val">1,000 km</strong>
+                        <div class="corner corner--tl"></div>
+                        <div class="corner corner--br"></div>
+                        <div class="module module--map">
+                            <div class="module-copy">
+                                <p class="eyebrow">SECTOR // PARAGUANÁ</p>
+                                <h2>MAPA <span>HUD</span></h2>
+                                <p>Navegación GPS en tiempo real, estaciones de servicio y puntos de control locales en Punto Fijo.</p>
+                                <button class="module-action" type="button" id="btn-open-map">ABRIR MAPA ➔</button>
+                            </div>
+                            <div class="map-visual">
+                                <div class="map-grid"></div>
+                                <div class="route route--a"></div>
+                                <div class="map-node map-node--a"></div>
+                                <div class="map-target"><b>◎</b><span>PUNTO FIJO</span></div>
+                            </div>
                         </div>
-                        <div class="divider-vertical"></div>
-                        <div class="metric-item">
-                            <span>PRÓX. SERVICIO</span>
-                            <strong id="hud-service-val">37.3 km/h</strong>
+                    </article>
+
+                    <article class="holo-card is-right main-card" data-index="1" id="subcard-audio">
+                        <div class="card-rail">
+                            <span>CARD 02</span>
+                            <b>AUDITORY CORE</b>
+                            <i>AUDIO // 02</i>
                         </div>
+                        <div class="corner corner--tl"></div>
+                        <div class="corner corner--br"></div>
+                        <div class="module module--music">
+                            <div class="module-copy">
+                                <p class="eyebrow">LOCAL MP3 PLAYER</p>
+                                <h2>MÚSICA <span>HUD</span></h2>
+                                <p>Reproductor de audio local integrado para pistas Synthwave y cyberpunk directamente desde el dispositivo.</p>
+                                <button class="module-action" type="button">REPRODUCIR ➔</button>
+                            </div>
+                            <div class="album-frame">
+                                <div class="album-orbit"><span>♫</span></div>
+                                <small>DECK // 01</small>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="holo-card is-hidden main-card" data-index="2" id="subcard-favorites">
+                        <div class="card-rail">
+                            <span>CARD 03</span>
+                            <b>SAVED DATA</b>
+                            <i>FAV // 03</i>
+                        </div>
+                        <div class="corner corner--tl"></div>
+                        <div class="corner corner--br"></div>
+                        <div class="module module--list">
+                            <div class="module-copy">
+                                <p class="eyebrow">USER MEMORY</p>
+                                <h2>FAVORITOS</h2>
+                                <p>Acceso rápido a tus rutas frecuentes, gasolineras guardadas y configuraciones predilectas.</p>
+                            </div>
+                            <div class="favorite-list">
+                                <button type="button">
+                                    <b>01</b>
+                                    <span><small>RUTA FRECUENTE</small>Sambil Paraguaná ➔ Centro</span>
+                                    <em>GUARDADO</em>
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- Tarjeta 04: Disparador para entrar al Submenú de Garaje -->
+                    <article class="holo-card is-hidden main-card" data-index="3" id="subcard-garage-trigger">
+                        <div class="card-rail">
+                            <span>CARD 04</span>
+                            <b>MACHINE IDENTITY</b>
+                            <i>GARAGE // 04</i>
+                        </div>
+                        <div class="corner corner--tl"></div>
+                        <div class="corner corner--br"></div>
+                        <div class="module module--vehicle">
+                            <div class="module-copy">
+                                <p class="eyebrow">OVERDRIVE // GARAGE CORE</p>
+                                <h2>GARAJE <span>CENTRAL</span></h2>
+                                <p>Accede al panel de configuración de identidad, telemetría y estética de la máquina.</p>
+                                <button class="module-action" type="button" id="btn-enter-garage">ACCEDER AL TALLER ➔</button>
+                            </div>
+                            <div class="garage-car">
+                                <img src="./assets/garajes/garaje_palio_negro.jpg" alt="Fiat Palio 1.8">
+                                <div class="paint-layer paint-layer--obsidian"></div>
+                                <div class="car-scan"></div>
+                                <span class="car-tag">FIAT PALIO 1.8L</span>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="holo-card is-hidden main-card" data-index="4" id="subcard-ads">
+                        <div class="card-rail">
+                            <span>CARD 05</span>
+                            <b>LOCAL SPONSORS</b>
+                            <i>ADS // 05</i>
+                        </div>
+                        <div class="corner corner--tl"></div>
+                        <div class="corner corner--br"></div>
+                        <div class="module module--sponsors">
+                            <div class="module-copy">
+                                <p class="eyebrow">PARTNERS</p>
+                                <h2>ANUNCIOS</h2>
+                                <p>Patrocinadores locales y ofertas exclusivas en repuestos y lubricantes en Paraguaná.</p>
+                            </div>
+                            <div class="sponsor-grid">
+                                <div>
+                                    <span>PATROCINADOR</span>
+                                    <b>PARAGUANÁ TIRES</b>
+                                    <small>Descuentos en neumáticos</small>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+
+                    <!-- ========================================== -->
+                    <!-- GRUPO 2: SUBMENÚ DE GARAJE (3 TARJETAS)    -->
+                    <!-- ========================================== -->
+                  <!-- Tarjeta 01: Submenú de Garaje (Perfil del Piloto - ID_01) -->
+                    <article class="holo-card is-hidden garage-sub-card" data-index="0" id="garage-sub-profile" style="display: none;">
+                        <div class="card-rail">
+                            <span>ID_01</span>
+                            <b>PILOT PROFILE</b>
+                            <i>IDENTITY + CALL-SIGN</i>
+                        </div>
+                        <div class="corner corner--tl"></div>
+                        <div class="corner corner--br"></div>
+                        <div class="module module--pilot">
+                            <!-- Lado Izquierdo: Anillo Cibernético con Huella -->
+                            <div class="identity-core">
+                                <div class="identity-ring">
+                                    <img src="./assets/componentes/7a5e6.svg" alt="Pilot icon">
+                                </div>
+                                <span>ID_8F4A // VERIFIED</span>
+                            </div>
+
+                            <!-- Lado Derecho: Identidad y Datos del Piloto (Estilo Figma) -->
+                            <div class="module-copy">
+                                <p class="eyebrow">PILOT PROFILE // LVL.27</p>
+                                <h2 id="profile-card-name" style="font-size: clamp(22px, 2.5vw, 34px);">NIGHT//RUNNER</h2>
+                                
+                                <div class="callsign-field">
+                                    <span>ACTIVE CALL-SIGN</span>
+                                    <input type="text" id="active-callsign-display" value="NIGHT//RUNNER" readonly>
+                                    <i>EDIT</i>
+                                </div>
+
+                                <div class="stat-row" style="margin-top: 15px;">
+                                    <span>
+                                        <small>LICENSE</small>
+                                        <strong>OD-X77-A</strong>
+                                    </span>
+                                    <span>
+                                        <small>SECTOR</small>
+                                        <strong>BCN_09</strong>
+                                    </span>
+                                    <span>
+                                        <small>SYNC</small>
+                                        <strong style="color: var(--cyan);">99.8%</strong>
+                                    </span>
+                                </div>
+
+                                <button class="module-action" type="button" id="btn-edit-profile" style="margin-top: 15px;">
+                                    EDITAR CREDENCIALES ➔
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+
+                  <!-- Tarjeta 02: Submenú de Garaje (Telemetría - VX_02) -->
+                    <article class="holo-card is-hidden garage-sub-card" data-index="1" id="garage-sub-telemetry" style="display: none;">
+                        <div class="card-rail">
+                            <span>VX_02</span>
+                            <b>ENGINE & TELEMETRY</b>
+                            <i>TELEMETRY // 02</i>
+                        </div>
+                        <div class="corner corner--tl"></div>
+                        <div class="corner corner--br"></div>
+                        <div class="module module--vehicle">
+                            <div class="engine-dial">
+                                <div>
+                                    <strong>97%</strong>
+                                    <small>HEALTH</small>
+                                </div>
+                            </div>
+                            <div class="module-copy">
+                                <p class="eyebrow">MI VEHÍCULO // TELEMETRÍA</p>
+                                <h2 id="card-vehicle-title" style="font-size: clamp(20px, 2.2vw, 29px);">PALIO R_99</h2>
+                                
+                                <div class="spec-grid" style="margin-top: 10px;">
+                                    <span><small>ENGINE</small><strong id="card-spec-engine">1.8L / 16V</strong></span>
+                                    <span><small>OIL TYPE</small><strong id="card-spec-oil">15W-40 SYN</strong></span>
+                                    <span><small>ODOMETER</small><strong id="card-spec-odo">48,209 KM</strong></span>
+                                    <span><small>NEXT SERVICE</small><strong id="card-spec-service">1,284 KM</strong></span>
+                                </div>
+
+                                <button class="module-action" type="button" id="btn-edit-vehicle" style="margin-top: 12px;">
+                                    CONFIGURAR FICHA ➔
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- Tarjeta 03: Submenú de Garaje (Estética y Estilo - CFG_03) -->
+                    <article class="holo-card is-hidden garage-sub-card" data-index="2" id="garage-sub-style" style="display: none;">
+                        <div class="card-rail">
+                            <span>CFG_03</span>
+                            <b>MACHINE + PAINT + NEON</b>
+                            <i>STYLE // 03</i>
+                        </div>
+                        <div class="corner corner--tl"></div>
+                        <div class="corner corner--br"></div>
+                        <div class="module module--config">
+                            <div class="config-preview">
+                                <img id="style-card-preview-img" src="./assets/garajes/garaje_palio_negro.jpg" alt="Fiat Palio 1.8">
+                                <div class="paint-layer paint-layer--obsidian"></div>
+                                <small>LIVE MATERIAL PREVIEW // FIAT PALIO</small>
+                            </div>
+                            <div class="config-panel">
+                                <p class="eyebrow">CONFIG GARAJE // VISUAL MATRIX</p>
+                                <h2>MACHINE <span>STYLE</span></h2>
+                                
+                                <fieldset>
+                                    <legend>BACKGROUND MACHINE</legend>
+                                    <div class="segmented" id="car-model-selector">
+                                        <button type="button" class="is-active" data-car="fiat_palio">FIAT PALIO</button>
+                                        <button type="button" data-car="chevrolet_aveo">CHEVROLET AVEO</button>
+                                        <button type="button" data-car="toyota_corolla">TOYOTA COROLLA</button>
+                                    </div>
+                                </fieldset>
+
+                                <fieldset>
+                                    <legend>PAINT FINISH</legend>
+                                    <div class="paint-options" id="car-paint-selector">
+                                        <button type="button" class="obsidian is-active" data-color="obsidian"><i></i>MATTE BLACK</button>
+                                        <button type="button" class="crimson" data-color="crimson"><i></i>CRIMSON</button>
+                                        <button type="button" class="titanium" data-color="titanium"><i></i>TITANIUM</button>
+                                    </div>
+                                </fieldset>
+
+                                <fieldset>
+                                    <legend>UI NEON THEME</legend>
+                                    <div class="theme-options" id="ui-theme-selector">
+                                        <button type="button" class="is-active" data-theme="cyan"><i></i>CYAN</button>
+                                        <button type="button" data-theme="purple"><i></i>PURPLE</button>
+                                        <button type="button" data-theme="gold"><i></i>GOLD</button>
+                                        <button type="button" data-theme="emerald"><i></i>EMERALD</button>
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </article>
+
+                <!-- Controles del Carrusel -->
+                <div class="carousel-controls">
+                    <button type="button" id="carousel-prev">←</button>
+                    <div id="carousel-dots">
+                        <button type="button" class="is-active" data-index="0"></button>
+                        <button type="button" data-index="1"></button>
+                        <button type="button" data-index="2"></button>
+                        <button type="button" data-index="3"></button>
+                        <button type="button" data-index="4"></button>
                     </div>
+                    <button type="button" id="carousel-next">→</button>
+                    <span>SWIPE / NAVIGATE</span>
                 </div>
-            </div>
+            </section>
 
-            <!-- BOTONERA HEADER -->
-            <div class="lab-mode-selector" style="display: flex; gap: 8px; align-items: center;">
-                <button class="lab-toggle-btn" id="btn-auth-open" type="button">🔓 ACCESAR</button>
-                <button class="lab-toggle-btn" id="btn-auth-logout" type="button" style="display:none;">🔒 SALIR</button>
-                
-                <button class="lab-toggle-btn" id="btn-toggle-view" title="Cambiar Vista">
-                    <svg id="toggle-svg-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="14" width="7" height="7"></rect>
-                        <rect x="3" y="14" width="7" height="7"></rect>
-                    </svg> 
-                    <span id="toggle-text">Cuadrícula</span>
-                </button>
-                
-                <!-- Botón de Sincronización Redondo Perfecto -->
-                <button class="lab-toggle-btn sync-icon-btn" id="btn-sync-data" title="Sincronizar Datos">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.73-5.73"/>
-                    </svg>
-                </button>
-            </div>
-        </header>
-
-        <div class="wall-poster-sponsor" id="btn-open-ads">
-            <span>Patrocinador Local</span>
-            <h4>🛞 Paraguaná Tires</h4>
-            <p>Ofertas en neumáticos y lubricantes en Punto Fijo. Haz clic aquí.</p>
-        </div>
-
-        <!-- ESCENARIO CENTRAL CON TARJETAS TÁCTILES DINÁMICAS -->
-        <div class="garage-stage">
-            <div class="cyber-carousel" id="cyber-carousel">
-                
-                <!-- ========================================== -->
-                <!-- ESTADO A: MENÚ PRINCIPAL (5 Tarjetas HUD)  -->
-                <!-- ========================================== -->
-                <div class="cyber-card card-left main-menu-card" id="card-open-map">
-                    <div class="card-top-bar">
-                        <div class="card-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
-                        <span class="card-tag">GPS // 01</span>
+            <!-- 4. Dock Inferior de Audio Estilizado (Figma) -->
+            <footer class="audio-zone">
+                <div class="audio-dock">
+                    <button class="play-button" id="btn-toggle-audio" type="button" aria-label="Reproducir audio" aria-pressed="false">
+                        <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                    </button>
+                    <div class="track-code">
+                        <span>HUD AUDIO DECK</span>
+                        <b>SYNTHWAVE TRACK 01</b>
                     </div>
-                    <div class="card-body"><h3 class="card-title">MAPA HUD</h3><p class="card-desc">Navegación GPS & Estaciones</p></div>
-                    <div class="card-footer-action"><span>[ABRIR MAPA]</span><span class="arrow">❯</span></div>
-                </div>
-
-                <div class="cyber-card card-left main-menu-card" id="card-open-player">
-                    <div class="card-top-bar">
-                        <div class="card-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6"/></svg></div>
-                        <span class="card-tag">AUDIO // 02</span>
+                    <div class="marquee">
+                        <div><span>OVERDRIVE AUDIO SYSTEM // CYBERPUNK SYNTHWAVE // STREAMING LOCAL MP3 //</span></div>
                     </div>
-                    <div class="card-body"><h3 class="card-title">MÚSICA HUD</h3><p class="card-desc">Reproductor MP3 Local</p></div>
-                    <div class="card-footer-action"><span>[REPRODUCIR]</span><span class="arrow">❯</span></div>
-                </div>
-
-                <div class="cyber-card active main-menu-card" id="card-open-favorites">
-                    <div class="card-top-bar">
-                        <div class="card-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-                        <span class="card-tag">DATOS // 03</span>
+                    <div class="waveform" id="audio-waveform">
+                        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
                     </div>
-                    <div class="card-body"><h3 class="card-title">FAVORITOS</h3><p class="card-desc">Rutas y Servicios Guardados</p></div>
-                    <div class="card-footer-action"><span>[ACCEDER]</span><span class="arrow">❯</span></div>
-                </div>
-
-                <div class="cyber-card card-right main-menu-card" id="card-open-garage-menu">
-                    <div class="card-top-bar">
-                        <div class="card-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-                        <span class="card-tag">GARAJE // 04</span>
+                    <div class="timecode">
+                        <span>01:24</span>
+                        <i><b></b></i>
+                        <span>03:45</span>
                     </div>
-                    <div class="card-body"><h3 class="card-title">GARAJE</h3><p class="card-desc">Perfil, Vehículo & Ajustes</p></div>
-                    <div class="card-footer-action"><span>[ENTRAR]</span><span class="arrow">❯</span></div>
+                    <button class="load-audio" id="btn-audio-settings" type="button" title="Opciones de audio" aria-label="Opciones de audio" aria-expanded="false" aria-controls="audio-settings">⚙</button>
                 </div>
-
-                <div class="cyber-card card-right main-menu-card" id="card-open-ads">
-                    <div class="card-top-bar">
-                        <div class="card-icon-box"><span style="font-size: 11px; font-weight: bold; color: var(--hud-primary);">Ad</span></div>
-                        <span class="card-tag">ANUNCIOS // 05</span>
-                    </div>
-                    <div class="card-body"><h3 class="card-title">ANUNCIOS</h3><p class="card-desc">Patrocinadores Locales</p></div>
-                    <div class="card-footer-action"><span>[VER OFERTAS]</span><span class="arrow">❯</span></div>
+                <div class="audio-settings" id="audio-settings" hidden>
+                    <label for="audio-volume">VOLUMEN <output id="audio-volume-value" for="audio-volume">30%</output></label>
+                    <input id="audio-volume" type="range" min="0" max="1" step="0.05" value="0.3">
                 </div>
-
-                <!-- ========================================== -->
-                <!-- ESTADO B: SUB-MENÚ GARAJE (3 Tarjetas 3D)  -->
-                <!-- ========================================== -->
-                
-                <!-- TARJETA 1: PERFIL DEL PILOTO -->
-                <div class="cyber-card card-left garage-sub-card" id="subcard-profiles" style="display: none;">
-                    <div class="card-top-bar">
-                        <div class="card-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
-                        <span class="card-tag">PILOTO // 01</span>
-                    </div>
-                    <div class="card-body"><h3 class="card-title">PERFIL</h3><p class="card-desc">Identidad de Piloto & Avatar</p></div>
-                    <div class="card-footer-action"><span>[VER PERFIL]</span><span class="arrow">❯</span></div>
+                <div class="system-ticker">
+                    <span><i></i> SYS_ONLINE // 256-BIT AES</span>
+                    <b>NEURAL LINK: STABLE</b>
+                    <span>LOCAL STORAGE: SYNCED</span>
+                    <span>PUNTO FIJO, FALCÓN</span>
                 </div>
-
-                <!-- TARJETA 2: MI VEHÍCULO (FICHA TÉCNICA) -->
-                <div class="cyber-card active garage-sub-card" id="subcard-vehicle" style="display: none;">
-                    <div class="card-top-bar">
-                        <div class="card-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-3-4H9L6 10l-2.5 1.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg></div>
-                        <span class="card-tag">MOTOR // 02</span>
-                    </div>
-                    <div class="card-body"><h3 class="card-title">MI VEHÍCULO</h3><p class="card-desc">Motor, Aceite & Telemetría</p></div>
-                    <div class="card-footer-action"><span>[EDITAR FICHA]</span><span class="arrow">❯</span></div>
-                </div>
-
-                <!-- TARJETA 3: CONFIGURACIÓN DE GARAJE (FONDOS Y ESTÉTICA) -->
-                <div class="cyber-card card-right garage-sub-card" id="subcard-garage-config" style="display: none;">
-                    <div class="card-top-bar">
-                        <div class="card-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></div>
-                        <span class="card-tag">ESTÉTICA // 03</span>
-                    </div>
-                    <div class="card-body"><h3 class="card-title">CONFIG GARAJE</h3><p class="card-desc">Fondo del Taller, Auto & Temas</p></div>
-                    <div class="card-footer-action"><span>[PERSONALIZAR]</span><span class="arrow">❯</span></div>
-                </div>
-
-            </div>
-
-            <!-- CONTROLES FLECHAS ANT / SIG Y RETORNO -->
-            <div class="carousel-nav-container">
-                <button class="nav-arrow-btn" id="btn-prev-card">← Ant</button>
-                <button class="nav-arrow-btn" id="btn-back-main" style="display:none; border-color: var(--hud-accent); color: var(--hud-accent);">⬅ VOLVER AL MENÚ</button>
-                <button class="nav-arrow-btn" id="btn-next-card">Sig →</button>
-            </div>
-        </div>
-        
-        <footer class="hud-footer-container" style="display: none;"></footer>
+            </footer>
+        </main>
     </div>
 
-    <!-- VISTA 2: MAPA EN VIVO -->
-    <div id="map-view">
-        <div style="position: absolute; top: 15px; left: 80px; z-index: 1000; display: flex; gap: 10px;">
-            <button class="cyber-btn back-to-garage" id="btn-back-garage">⬅️ Volver</button>
-            <button class="cyber-btn" id="btn-toggle-engine" style="font-size: 11px; background: rgba(5,8,17,0.9); border: 1px solid var(--hud-primary); color: var(--hud-primary);">
-                ⚙️ Motor: <span id="engine-label">Vector Leaflet</span>
-            </button>
-        </div>
-        <div id="map" style="height: 100%; width: 100%;"></div>
-    </div>
-
-    <!-- ================= MODALES AUTENTICACIÓN Y SISTEMA ================= -->
-
-    <!-- MODAL AUTENTICACIÓN -->
-    <div id="auth-modal" class="modal-overlay">
-        <div class="modal-content auth-cyber-card">
+    <div class="modal-overlay" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+        <section class="modal-content auth-cyber-card">
+            <button class="modal-close cyber-btn" id="btn-auth-close" type="button" aria-label="Cerrar">×</button>
             <div class="auth-card-header">
-                <div class="auth-icon-badge">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--hud-primary)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <div class="auth-icon-badge" aria-hidden="true">
+                    <img src="./assets/componentes/a0571.svg" alt="">
                 </div>
-                <h3 id="auth-title">ACCESO OVERDRIVE</h3>
-                <p class="auth-subtitle">IDENTIFICACIÓN DE PILOTO O NUEVO REGISTRO</p>
+                <h3 id="auth-modal-title">IDENTIFICACIÓN DE PILOTO</h3>
+                <p class="auth-subtitle">OVERDRIVE // DRIVER IDENTITY LINK</p>
             </div>
-
-            <div class="auth-tab-switch">
-                <button id="tab-login" class="auth-tab-btn active" type="button">[ INICIAR SESIÓN ]</button>
-                <button id="tab-register" class="auth-tab-btn" type="button">[ REGISTRO ]</button>
+            <div class="auth-tab-switch" role="tablist" aria-label="Acceso o registro">
+                <button class="auth-tab-btn active" id="tab-login" type="button" role="tab" aria-selected="true">ACCEDER</button>
+                <button class="auth-tab-btn" id="tab-register" type="button" role="tab" aria-selected="false">REGISTRARSE</button>
             </div>
-
-            <form id="auth-form" style="margin-top: 15px;">
-                <div class="form-group auth-form-group" id="group-pilot-name" style="display: none;">
-                    <label for="auth-pilot-name">APODO DE PILOTO (CALL-SIGN)</label>
-                    <input id="auth-pilot-name" type="text" placeholder="Ej. Jose Nelo // Nextaker" autocomplete="username">
+            <form id="auth-form">
+                <div class="auth-form-group" id="group-pilot-name" hidden>
+                    <label for="auth-pilot-name">CALL-SIGN</label>
+                    <div class="input-with-icon">
+                        <img src="./assets/componentes/7a5e6.svg" alt="" aria-hidden="true">
+                        <input id="auth-pilot-name" name="pilotName" type="text" autocomplete="nickname" placeholder="Choose your call-sign">
+                    </div>
                 </div>
-
-                <div class="form-group auth-form-group">
+                <div class="auth-form-group">
                     <label for="auth-email">CORREO ELECTRÓNICO</label>
-                    <input id="auth-email" type="email" placeholder="piloto@overdrive.net" required autocomplete="email">
+                    <div class="input-with-icon">
+                        <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        <input id="auth-email" name="email" type="email" autocomplete="email" placeholder="pilot@overdrive.net" required>
+                    </div>
                 </div>
-
-                <div class="form-group auth-form-group">
+                <div class="auth-form-group">
                     <label for="auth-password">CONTRASEÑA</label>
-                    <input id="auth-password" type="password" placeholder="••••••••••••" required minlength="6" autocomplete="current-password">
+                    <div class="input-with-icon">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <input id="auth-password" name="password" type="password" autocomplete="current-password" placeholder="••••••••••••" required>
+                    </div>
                 </div>
-
-                <p id="auth-status" class="auth-status" role="status"></p>
-
-                <div class="modal-actions auth-actions">
-                    <button class="neon-btn primary full-width" id="auth-submit" type="submit">INICIALIZAR SISTEMA ➔</button>
-                    <button class="neon-btn secondary" id="btn-auth-close" type="button">CANCELAR</button>
+                <p class="auth-status" id="auth-status" role="status" aria-live="polite"></p>
+                <div class="auth-actions">
+                    <button class="neon-btn full-width" id="auth-submit" type="submit">INICIALIZAR SISTEMA ➔</button>
+                </div>
+                
+                <!-- PIE DE TARJETA TÉCNICO (Figma Style) -->
+                <div class="auth-card-footer">
+                    <span><img src="./assets/componentes/e5517.svg" alt="">256-BIT JWT ENCRYPTED</span>
+                    <span>SUPABASE AUTH SECURED</span>
                 </div>
             </form>
-
-            <div class="auth-card-footer">
-                <span>🛡️ ENCRIPTADO JWT 256-BIT</span>
-                <span>🟢 SUPABASE AUTH SECURED</span>
-            </div>
-        </div>
+        </section>
     </div>
 
-    <!-- MODAL 1: PERFIL DEL PILOTO CON SELECTOR DE AVATAR -->
-    <div id="modal-pilot-profile" class="modal-overlay">
-        <div class="modal-content auth-cyber-card">
+    <div class="modal-overlay" id="modal-pilot-profile" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+        <section class="modal-content auth-cyber-card">
+            <button class="modal-close cyber-btn" id="btn-close-profile-modal" type="button" aria-label="Cerrar">×</button>
             <div class="auth-card-header">
-                <div class="auth-icon-badge">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--hud-primary)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <div class="auth-icon-badge" aria-hidden="true">
+                    <img src="./assets/componentes/7a5e6.svg" alt="">
                 </div>
-                <h3>PERFIL DE PILOTO</h3>
-                <p class="auth-subtitle">IDENTIDAD Y SELECCIÓN DE AVATAR</p>
+                <h3 id="profile-modal-title">PERFIL DEL PILOTO</h3>
+                <p class="auth-subtitle">ACTUALIZAR IDENTIDAD</p>
             </div>
-            
-            <div class="form-group auth-form-group">
-                <label>APODO DE PILOTO (CALL-SIGN)</label>
-                <input id="profile-pilot-name" type="text" style="width:100%; padding:10px; background:rgba(5,8,17,0.8); border:1px solid var(--card-border); color:var(--hud-primary); font-weight:bold;">
+            <div class="auth-form-group">
+                <label for="profile-pilot-name">CALL-SIGN</label>
+                <input id="profile-pilot-name" type="text" autocomplete="nickname">
             </div>
-
-            <div class="form-group auth-form-group">
-                <label>CORREO REGISTRADO</label>
-                <input id="profile-email" type="text" readonly style="width:100%; padding:10px; background:rgba(5,8,17,0.8); border:1px solid var(--card-border); color:#fff; opacity:0.7;">
+            <div class="auth-form-group">
+                <label for="profile-email">CORREO ELECTRÓNICO</label>
+                <input id="profile-email" type="email" readonly>
             </div>
-
-            <!-- SELECTOR DE AVATARES -->
-            <div class="form-group auth-form-group">
-                <label>AVATARES DE ACCESO RÁPIDO</label>
-                <div class="avatar-presets" style="display: flex; gap: 12px; justify-content: center; margin-top: 8px;">
-                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" class="avatar-option" style="width:42px; height:42px; border-radius:50%; border:2px solid var(--hud-primary); cursor:pointer; object-fit:cover;" title="Cyber Pilot 1">
-                    <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80" class="avatar-option" style="width:42px; height:42px; border-radius:50%; border:2px solid var(--card-border); cursor:pointer; object-fit:cover;" title="Cyber Pilot 2">
-                    <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=150&q=80" class="avatar-option" style="width:42px; height:42px; border-radius:50%; border:2px solid var(--card-border); cursor:pointer; object-fit:cover;" title="Cyber Pilot 3">
-                </div>
+            <div class="auth-form-group">
+                <label for="profile-avatar-url">URL DEL AVATAR</label>
+                <input id="profile-avatar-url" type="url" autocomplete="url">
             </div>
-
-            <div class="form-group auth-form-group">
-                <label for="profile-avatar-url">URL DE AVATAR PERSONALIZADO</label>
-                <input id="profile-avatar-url" type="text" placeholder="https://..." style="width:100%; padding:8px; background:rgba(5,8,17,0.8); border:1px solid var(--card-border); color:#fff;">
+            <p class="auth-status" id="profile-status" role="status" aria-live="polite"></p>
+            <div class="auth-actions">
+                <button class="neon-btn full-width" id="btn-save-pilot-profile" type="button">GUARDAR PERFIL</button>
             </div>
-
-            <div class="modal-actions" style="margin-top: 20px;">
-                <button class="neon-btn primary full-width" id="btn-save-pilot-profile" type="button">GUARDAR PERFIL ➔</button>
-                <button class="neon-btn secondary" id="btn-close-profile-modal" type="button" style="margin-top: 8px;">CERRAR</button>
-            </div>
-        </div>
+        </section>
     </div>
 
-    <!-- MODAL 2: FICHA TÉCNICA DEL VEHÍCULO -->
-    <div id="modal-vehicle-spec" class="modal-overlay">
-        <div class="modal-content auth-cyber-card" style="max-width: 480px;">
+    <div class="modal-overlay" id="modal-vehicle-spec" role="dialog" aria-modal="true" aria-labelledby="vehicle-modal-title">
+        <section class="modal-content auth-cyber-card">
+            <button class="modal-close cyber-btn" id="btn-close-vehicle-modal" type="button" aria-label="Cerrar">×</button>
             <div class="auth-card-header">
-                <div class="auth-icon-badge">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--hud-primary)" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-3-4H9L6 10l-2.5 1.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+                <div class="auth-icon-badge" aria-hidden="true">
+                    <img src="./assets/componentes/7a5e6.svg" alt="">
                 </div>
-                <h3>TELEMETRÍA DE VEHÍCULO</h3>
-                <p class="auth-subtitle">DATOS TÉCNICOS & MANTENIMIENTO DEL MOTOR</p>
+                <h3 id="vehicle-modal-title">FICHA TÉCNICA</h3>
+                <p class="auth-subtitle">MOTOR // TELEMETRÍA</p>
             </div>
-
-            <form id="vehicle-spec-form">
-                <div class="form-group auth-form-group">
-                    <label for="spec-car-model">MODELO DEL VEHÍCULO</label>
-                    <select id="spec-car-model" class="custom-select" style="width: 100%; padding: 8px; background: rgba(5,8,17,0.8); color: #fff; border: 1px solid var(--card-border); font-family: inherit;">
-                        <option value="fiat_palio">Fiat Palio 1.8 (1.8 L)</option>
-                        <option value="chevrolet_aveo">Chevrolet Aveo Speed (1.5 L)</option>
-                        <option value="toyota_corolla">Toyota Corolla (1.8 L)</option>
-                        <option value="chevrolet_optra">Chevrolet Optra Limited (1.8 L)</option>
-                    </select>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                    <div class="form-group auth-form-group">
-                        <label for="spec-engine-type">MOTOR</label>
-                        <input id="spec-engine-type" type="text" placeholder="Ej. 1.8L GM" style="width:100%; padding:8px; background:rgba(5,8,17,0.8); border:1px solid var(--card-border); color:#fff;">
-                    </div>
-                    <div class="form-group auth-form-group">
-                        <label for="spec-oil-type">TIPO DE ACEITE</label>
-                        <input id="spec-oil-type" type="text" placeholder="Ej. 15W-40" style="width:100%; padding:8px; background:rgba(5,8,17,0.8); border:1px solid var(--card-border); color:#fff;">
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div class="form-group auth-form-group">
-                        <label for="spec-mileage">KILOMETRAJE (KM)</label>
-                        <input id="spec-mileage" type="number" placeholder="Ej. 150000" style="width:100%; padding:8px; background:rgba(5,8,17,0.8); border:1px solid var(--card-border); color:#fff;">
-                    </div>
-                    <div class="form-group auth-form-group">
-                        <label for="spec-next-service">PRÓX. SERVICIO (KM)</label>
-                        <input id="spec-next-service" type="number" placeholder="Ej. 155000" style="width:100%; padding:8px; background:rgba(5,8,17,0.8); border:1px solid var(--card-border); color:#fff;">
-                    </div>
-                </div>
-
-                <p id="vehicle-spec-status" class="auth-status" style="margin-top: 5px;"></p>
-
-                <div class="modal-actions" style="margin-top: 15px;">
-                    <button class="neon-btn primary full-width" id="btn-save-vehicle-spec" type="button">GUARDAR FICHA ➔</button>
-                    <button class="neon-btn secondary" id="btn-close-vehicle-modal" type="button" style="margin-top: 8px;">CANCELAR</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-   <!-- MODAL 3: CONFIGURACIÓN DE GARAJE (FONDOS, VEHÍCULO Y TEMAS) -->
-    <div id="modal-garage-config" class="modal-overlay">
-        <div class="modal-content auth-cyber-card" style="max-width: 480px;">
-            <div class="auth-card-header">
-                <div class="auth-icon-badge">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--hud-primary)" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                </div>
-                <h3>CONFIGURACIÓN DE GARAJE</h3>
-                <p class="auth-subtitle">ESTÉTICA DEL TALLER, VEHÍCULO DE FONDO & TEMAS</p>
-            </div>
-
-            <div class="form-group auth-form-group">
-                <label>VEHÍCULO DE FONDO EN EL GARAJE</label>
-                <select id="select-garage-car-model" class="custom-select" style="width: 100%; padding: 8px; background: rgba(5,8,17,0.8); color: #fff; border: 1px solid var(--card-border); font-family: inherit;">
+            <div class="auth-form-group">
+                <label for="spec-car-model">VEHÍCULO</label>
+                <select id="spec-car-model" class="modal-input">
                     <option value="fiat_palio">Fiat Palio 1.8</option>
-                    <option value="chevrolet_aveo">Chevrolet Aveo Speed</option>
+                    <option value="chevrolet_aveo">Chevrolet Aveo</option>
                     <option value="toyota_corolla">Toyota Corolla</option>
-                    <option value="chevrolet_optra">Chevrolet Optra Limited</option>
                 </select>
             </div>
-
-            <div class="form-group auth-form-group" style="margin-top: 10px;">
-                <label>COLOR / ACABADO DEL AUTO EN EL GARAJE</label>
-                <div class="color-selector-row" style="display: flex; gap: 15px; margin-top: 6px; justify-content: center;">
-                    <button type="button" class="color-btn" data-color="rojo" style="background: #ff2a2a; width: 32px; height: 32px; border-radius: 50%; border: 2px solid #fff; cursor: pointer;" title="Rojo"></button>
-                    <button type="button" class="color-btn" data-color="negro" style="background: #111111; width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--hud-primary); cursor: pointer;" title="Negro"></button>
-                    <button type="button" class="color-btn" data-color="gris" style="background: #aaaaaa; width: 32px; height: 32px; border-radius: 50%; border: 2px solid #fff; cursor: pointer;" title="Gris"></button>
-                </div>
+            <div class="auth-form-group">
+                <label for="spec-engine-type">MOTOR</label>
+                <input id="spec-engine-type" type="text">
             </div>
-
-            <div class="form-group auth-form-group" style="margin-top: 10px;">
-                <label>TEMA NEÓN DE INTERFAZ</label>
-                <select id="select-theme-mode" class="custom-select" style="width: 100%; padding: 8px; background: rgba(5,8,17,0.8); color: #fff; border: 1px solid var(--card-border); font-family: inherit;">
-                    <option value="">Cyber Cyan (Predeterminado)</option>
-                    <option value="theme-purple">Púrpura Neón</option>
-                    <option value="theme-gold">Cyber Gold / Fuego</option>
-                    <option value="theme-emerald">Esmeralda Neón</option>
-                </select>
+            <div class="auth-form-group">
+                <label for="spec-oil-type">TIPO DE ACEITE</label>
+                <input id="spec-oil-type" type="text">
             </div>
-
-            <div class="modal-actions" style="margin-top: 20px;">
-                <button class="neon-btn primary full-width" id="btn-save-garage-config" type="button">APLICAR CAMBIOS ➔</button>
-                <button class="neon-btn secondary" id="btn-close-garage-config" type="button" style="margin-top: 8px;">CERRAR</button>
+            <div class="auth-form-group">
+                <label for="spec-mileage">ODÓMETRO (KM)</label>
+                <input id="spec-mileage" type="number" min="0" step="1" inputmode="numeric">
             </div>
-        </div>
+            <div class="auth-form-group">
+                <label for="spec-next-service">PRÓXIMO SERVICIO (KM)</label>
+                <input id="spec-next-service" type="number" min="0" step="1" inputmode="numeric">
+            </div>
+            <p class="auth-status" id="vehicle-spec-status" role="status" aria-live="polite"></p>
+            <div class="auth-actions">
+                <button class="neon-btn full-width" id="btn-save-vehicle-spec" type="button">GUARDAR TELEMETRÍA</button>
+            </div>
+        </section>
     </div>
-    <!-- Librería Leaflet -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script type="module" src="js/main.js"></script>
+
+    <!-- Leaflet JS para el Mapa -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="./js/main.js"></script>
 </body>
 </html>

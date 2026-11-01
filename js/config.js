@@ -12,37 +12,21 @@ export const CONFIG = {
     }
 };
 
+export const DEFAULT_CAR_KEY = 'fiat_palio';
+export const DEFAULT_PAINT_KEY = 'obsidian';
+export const CAR_PAINTS = ['obsidian', 'crimson', 'titanium'];
+
 export const CAR_CATALOG = {
-    'fiat_palio': {  
-        name: 'Fiat Palio 1.8',  
-        images: {
-            'rojo': 'assets/garajes/garaje_palio_rojo.jpg',
-            'negro': 'assets/garajes/garaje_palio_negro.jpg',
-            'gris': 'assets/garajes/garaje_palio_gris.jpg'
-        }
-    },  
-    'chevrolet_aveo': {  
-        name: 'Chevrolet Aveo Speed',  
-        images: {
-            'rojo': 'assets/garajes/garaje_aveo_rojo.jpg',
-            'negro': 'assets/garajes/garaje_aveo_negro.jpg',
-            'gris': 'assets/garajes/garaje_aveo_gris.jpg'
-        }  
-    },  
-    'toyota_corolla': {  
-        name: 'Toyota Corolla',  
-        images: {
-            'rojo': 'assets/garajes/garaje_corolla_rojo.jpg',
-            'negro': 'assets/garajes/garaje_corolla_negro.jpg',
-            'gris': 'assets/garajes/garaje_corolla_gris.jpg'
-        }  
-    },  
-    'chevrolet_optra': {  
-        name: 'Chevrolet Optra Limited',  
-        images: {
-            'rojo': 'assets/garajes/garaje_optra_rojo.jpg',
-            'negro': 'assets/garajes/garaje_optra_negro.jpg',
-            'gris': 'assets/garajes/garaje_optra_gris.jpg'
-        }  
-    }  
+    fiat_palio: {
+        name: 'Fiat Palio 1.8',
+        image: './assets/garajes/garaje_palio_negro.jpg'
+    },
+    chevrolet_aveo: {
+        name: 'Chevrolet Aveo',
+        image: './assets/garajes/garaje_aveo.jpg'
+    },
+    toyota_corolla: {
+        name: 'Toyota Corolla',
+        image: './assets/garajes/garaje_corolla.jpg'
+    }
 };

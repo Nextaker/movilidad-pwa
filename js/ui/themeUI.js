@@ -3,17 +3,13 @@ import { storageService } from '../services/storageService.js';
 
 export const themeUI = {
     init() {
-        const savedTheme = storageService.getTheme();
+        const savedTheme = storageService.getTheme() || 'cyan';
         this.applyTheme(savedTheme);
-
-        // Exponer al window para botones con onclick
-        window.cambiarTemaGlobal = (themeName) => {
-            storageService.setTheme(themeName);
-            this.applyTheme(themeName);
-        };
     },
 
     applyTheme(theme) {
+        if (!theme) theme = 'cyan';
+        // Remover cualquier clase de tema previa de manera segura
         document.body.classList.remove('theme-cyan', 'theme-purple', 'theme-gold', 'theme-emerald');
         document.body.classList.add(`theme-${theme}`);
     }

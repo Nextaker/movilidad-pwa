@@ -3,6 +3,10 @@ self.addEventListener('install', (e) => {
     console.log('Service Worker instalado');
 });
 
+self.addEventListener('activate', (e) => {
+    e.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('fetch', (e) => {
     // Ignorar por completo las peticiones a Mapbox para evitar que fallen los tiles del mapa
     if (e.request.url.includes('mapbox.com')) {

@@ -1,113 +1,85 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&display=swap');
-
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('https://static.figma.com/font/IBMPlexMono-Regular_2') format('woff2');
+  font-weight: 400;
 }
 
-/* =========================================================
-   ESTILOS GENERALES
-   ========================================================= */
-body, html {
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    position: fixed;
-    background-color: #050811;
-    color: var(--text-primary);
-    font-family: 'Orbitron', sans-serif;
-    perspective: 1200px;
-    transition: background-color 0.4s ease;
+@font-face {
+  font-family: 'Orbitron';
+  src: url('https://static.figma.com/font/Orbitron_wght__1') format('woff2');
+  font-weight: 600 900;
 }
 
-/* Vistas Principales */
-#garage-view, #map-view {
-    width: 100vw;
-    height: 100vh;
-    position: absolute;
-    top: 0;
-    left: 0;
+* { box-sizing: border-box; }
+html, body, #root { min-width: 320px; min-height: 100%; margin: 0; background: var(--obsidian); }
+button, input { color: inherit; font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-linecap: square; stroke-linejoin: miter; stroke-width: 1.7; }
+
+.scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  opacity: .17;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, color-mix(in srgb, var(--accent) 13%, transparent) 4px);
+  animation: scan 12s linear infinite;
 }
 
-#map-view {
-    display: none;
-    z-index: 10;
+.boot {
+  position: relative;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 20px;
+  background:
+    linear-gradient(rgba(0,240,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,240,255,.025) 1px, transparent 1px),
+    radial-gradient(circle at 50% 45%, rgba(0,240,255,.09), transparent 37%),
+    #02050b;
+  background-size: 40px 40px, 40px 40px, auto, auto;
 }
 
-/* Contenedor Garaje */
-.garage-container {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 15px 30px;
-    z-index: 1;
+.boot::before {
+  position: absolute;
+  inset: 8%;
+  content: '';
+  border: 1px solid rgba(0,240,255,.07);
+  clip-path: polygon(0 28px, 28px 0, calc(100% - 120px) 0, calc(100% - 100px) 12px, 100% 12px, 100% calc(100% - 28px), calc(100% - 28px) 100%, 120px 100%, 100px calc(100% - 12px), 0 calc(100% - 12px));
 }
 
-
-/* Mapas */
-#map { background-color: #080c14 !important; }
-.leaflet-popup-content-wrapper, .leaflet-popup-tip {
-    background: var(--card-bg) !important; color: var(--text-primary) !important;
-    border: 1px solid var(--hud-primary) !important; font-family: 'Orbitron', sans-serif !important;
-}
-.diamond-pin {
-    width: 14px; height: 14px; background: var(--hud-primary); transform: rotate(45deg);
-    margin: 0 auto; box-shadow: 0 0 10px var(--hud-primary); border: 2px solid #050811;
+.boot__frame {
+  position: relative;
+  width: min(650px, 94vw);
+  padding: 28px 34px 24px;
+  border: 1px solid rgba(0,240,255,.55);
+  background: rgba(2,7,14,.93);
+  box-shadow: 0 0 80px rgba(0,240,255,.1), inset 0 0 60px rgba(0,240,255,.025);
+  clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
 }
 
-/* --- ESTILO CISELADO / BISELADO PARA LAS TARJETAS DE ESTACIONES EN EL MAPA --- */
-.hud-station-card {
-    font-family: 'Orbitron', sans-serif; 
-    background: rgba(5, 8, 17, 0.95) !important;
-    color: #fff !important; 
-    padding: 8px 12px !important; 
-    border: 1.5px solid var(--hud-primary) !important; 
-    font-size: 10px !important; 
-    white-space: nowrap !important;
-    box-shadow: 0 0 15px var(--hud-shadow) !important;
-    clip-path: polygon(8px 0%, 100% 0%, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0% 100%, 0% 8px);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+.boot__frame::before { position:absolute; top:0; left:20px; width:120px; height:3px; content:''; background:var(--cyan); box-shadow:0 0 18px var(--cyan); }
+.boot__rail, .boot__footer, .boot__telemetry { display:flex; align-items:center; justify-content:space-between; font-size:8px; letter-spacing:.13em; color:var(--muted); }
+.boot__rail b { color:#44ff9a; font-weight:400; }
+.boot__brand { margin:42px 0 34px; display:flex; justify-content:center; align-items:center; gap:18px; }
+.boot__brand img { width:58px; filter:drop-shadow(0 0 12px rgba(0,240,255,.6)); }
+.boot__brand p { position:relative; margin:0; font:800 clamp(31px, 7vw, 56px)/.86 'Orbitron'; letter-spacing:-.06em; text-shadow:3px 0 rgba(255,0,80,.35), -3px 0 rgba(0,240,255,.55); animation:glitch 4s steps(1) infinite; }
+.boot__brand div > span { display:block; margin-top:12px; color:var(--cyan); font:600 11px 'Orbitron'; letter-spacing:.45em; }
+.boot__telemetry strong { color:var(--cyan); font:600 13px 'Orbitron'; }
+.boot__progress { position:relative; height:12px; margin:9px 0 20px; padding:2px; border:1px solid rgba(0,240,255,.45); background:#010308; }
+.boot__progress i { display:block; height:100%; background:linear-gradient(90deg, rgba(0,240,255,.2), var(--cyan)); box-shadow:0 0 18px rgba(0,240,255,.75); transition:width 90ms linear; }
+.boot__progress b { position:absolute; top:-5px; width:1px; height:20px; background:white; box-shadow:0 0 8px white; transition:left 90ms linear; }
+.boot__log { display:grid; gap:7px; color:#607783; font-size:8px; }
+.boot__log span { display:grid; grid-template-columns:25px 1fr auto; }
+.boot__log b { color:#334955; }
+.boot__log em { color:#44ff9a; font-style:normal; }
+.ignition { width:100%; min-height:58px; margin:28px 0 20px; padding:0 22px; display:flex; align-items:center; justify-content:space-between; border:1px solid var(--cyan); color:#011017; background:var(--cyan); cursor:pointer; font:600 12px 'Orbitron'; letter-spacing:.08em; clip-path:polygon(11px 0,100% 0,100% calc(100% - 11px),calc(100% - 11px) 100%,0 100%,0 11px); animation:ignition 1.8s ease-in-out infinite; }
+.ignition i { font:400 7px 'IBM Plex Mono'; }
+.ignition:disabled { color:#51656c; border-color:#183b43; background:rgba(0,240,255,.06); cursor:wait; animation:none; }
+.ignition:not(:disabled):hover { color:var(--cyan); background:#06131b; }
 
 
-/* --- NUEVO MARCADOR GPS CIRCULAR (USUARIO) --- */
-.user-location-marker {
-    background: transparent !important;
-    border: none !important;
-}
-
-.gps-circle-pulse {
-    width: 22px;
-    height: 22px;
-    background: var(--hud-primary, #00f0ff);
-    border: 1px solid #010511;
-    border-radius: 50%;
-    box-shadow: 0 0 15px var(--hud-primary, #00f0ff);
-    animation: radarPulse 1.8s infinite ease-out;
-}
-
-@keyframes radarPulse {
-    0% {
-        transform: scale(0.8);
-        box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.7);
-    }
-    70% {
-        transform: scale(1);
-        box-shadow: 0 0 0 14px rgba(0, 240, 255, 0);
-    }
-    100% {
-        transform: scale(0.8);
-        box-shadow: 0 0 0 0 rgba(0, 240, 255, 0);
-    }
-}
-
+@keyframes scan { to { transform:translateY(12px); } }
+@keyframes glitch { 0%,91%,100%{transform:translate(0)}92%{transform:translate(-3px,1px)}94%{transform:translate(3px,-1px)}96%{transform:translate(-1px)} }
+@keyframes ignition { 50% { box-shadow:0 0 25px rgba(0,240,255,.43); } }
