@@ -19,14 +19,14 @@ export const CAR_PAINTS = ['obsidian', 'crimson', 'titanium'];
 export const CAR_CATALOG = {
     fiat_palio: {
         name: 'Fiat Palio 1.8',
-        image: './assets/garajes/garaje_palio_negro.jpg'
+        image: './assets/garajes/garaje_palio_negro.webp'
     },
     chevrolet_aveo: {
         name: 'Chevrolet Aveo',
-        image: './assets/garajes/garaje_aveo.jpg'
+        image: './assets/garajes/garaje_aveo.webp'
     },
     toyota_corolla: {
         name: 'Toyota Corolla',
-        image: './assets/garajes/garaje_corolla.jpg'
+        image: './assets/garajes/garaje_corolla.webp'
     }
 };

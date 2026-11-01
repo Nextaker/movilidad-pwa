@@ -7,6 +7,11 @@ let map = null;
 let tileLayer = null;
 let userMarker = null;
 let currentEngine = storageService.getMapEngine();
+let leafletPromise = null;
+
+const LEAFLET_VERSION = '1.9.4';
+const LEAFLET_CSS_URL = `https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.css`;
+const LEAFLET_JS_URL = `https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.js`;
 
 const TILE_URLS = {
     leaflet_vec: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -37,10 +42,46 @@ function createStationHtml(statusText, statusClass, stationName) {
     `;
 }
 
+function loadLeaflet() {
+    if (window.L) return Promise.resolve(window.L);
+    if (leafletPromise) return leafletPromise;
+
+    const stylesheet = new Promise((resolve, reject) => {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = LEAFLET_CSS_URL;
+        link.onload = resolve;
+        link.onerror = () => reject(new Error('No se pudieron cargar los estilos de Leaflet.'));
+        document.head.append(link);
+    });
+
+    const script = new Promise((resolve, reject) => {
+        const element = document.createElement('script');
+        element.src = LEAFLET_JS_URL;
+        element.async = true;
+        element.onload = resolve;
+        element.onerror = () => reject(new Error('No se pudo cargar Leaflet.'));
+        document.head.append(element);
+    });
+
+    leafletPromise = Promise.all([stylesheet, script])
+        .then(() => {
+            if (!window.L) throw new Error('Leaflet se cargó, pero su API no está disponible.');
+            return window.L;
+        })
+        .catch((error) => {
+            leafletPromise = null;
+            throw error;
+        });
+
+    return leafletPromise;
+}
+
 export const mapService = {
-    initMap(containerId = 'map') {
+    async initMap(containerId = 'map') {
+        const L = await loadLeaflet();
         if (!map) {
-            map = L.map(containerId, { zoomControl: false }).setView(CONFIG.DEFAULT_COORDS, CONFIG.DEFAULT_ZOOM);
+            map = L.map(containerId, { zoomControl: false, maxZoom: 19 }).setView(CONFIG.DEFAULT_COORDS, CONFIG.DEFAULT_ZOOM);
             this.applyTileLayer(currentEngine);
             this.loadGasStations();
         }
@@ -59,7 +100,12 @@ export const mapService = {
         }
 
         const attribution = engine === 'leaflet_sat' ? '© Esri World Imagery' : '© OpenStreetMap';
-        tileLayer = L.tileLayer(TILE_URLS[engine], { attribution, maxZoom: 19 }).addTo(map);
+        tileLayer = window.L.tileLayer(TILE_URLS[engine], {
+            attribution,
+            maxNativeZoom: engine === 'leaflet_sat' ? 18 : 19,
+            maxZoom: 19
+        }).addTo(map);
+        map.setMaxZoom(19);
         currentEngine = engine;
         storageService.setMapEngine(engine);
 
@@ -91,14 +137,14 @@ export const mapService = {
                     statusClass = "station-status--warning"; 
                 }
 
-                const stationIcon = L.divIcon({
+                const stationIcon = window.L.divIcon({
                     className: 'custom-station-icon',
                     html: createStationHtml(estadoTexto, statusClass, station.name),
-                    iconSize: [158, 120], 
-                    iconAnchor: [79, 110]
+                    iconSize: [158, 129],
+                    iconAnchor: [79, 129]
                 });
 
-                L.marker([station.latitude, station.longitude], { icon: stationIcon }).addTo(map);
+                window.L.marker([station.latitude, station.longitude], { icon: stationIcon }).addTo(map);
             });
         } catch (err) {
             console.error('Error cargando estaciones:', err);
@@ -109,7 +155,7 @@ export const mapService = {
         if (!map) return;
 
         // Icono de radar y crosshair exacto del CSS de Figma
-        const userRadarIcon = L.divIcon({
+        const userRadarIcon = window.L.divIcon({
             className: 'custom-user-icon',
             html: `
                 <div class="gps-location">
@@ -127,7 +173,7 @@ export const mapService = {
         });
 
         if (!userMarker) {
-            userMarker = L.marker(CONFIG.DEFAULT_COORDS, { icon: userRadarIcon, zIndexOffset: 1000 }).addTo(map)
+            userMarker = window.L.marker(CONFIG.DEFAULT_COORDS, { icon: userRadarIcon, zIndexOffset: 1000 }).addTo(map)
                 .bindPopup("<b>¡Tu Ubicación Actual (Netspace)!</b>");
         }
 

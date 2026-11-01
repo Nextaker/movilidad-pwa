@@ -1,5 +1,5 @@
 .hud { position:relative; min-height:100dvh; height:100dvh; display:grid; grid-template-rows:auto minmax(0,1fr) auto; overflow:hidden; isolation:isolate; background:var(--obsidian); }
-.hud__background { position:absolute; inset:0; z-index:-2; background:linear-gradient(90deg, rgba(5,8,17,.96), rgba(5,8,17,.69) 50%, rgba(5,8,17,.95)), url('/assets/componentes/garage-porsche.jpg') center 55% / cover; filter:saturate(.7) contrast(1.08); }
+.hud__background { position:absolute; inset:0; z-index:-2; background:linear-gradient(90deg, rgba(5,8,17,.96), rgba(5,8,17,.69) 50%, rgba(5,8,17,.95)), url('/assets/componentes/garage-porsche.webp') center 55% / cover; filter:saturate(.7) contrast(1.08); }
 .hud__background::after { position:absolute; inset:0; content:''; background:radial-gradient(circle at 50% 56%, color-mix(in srgb,var(--accent) 11%,transparent),transparent 35%),linear-gradient(180deg,#050811 0,transparent 32%,#050811 100%); }
 .hud::before { position:absolute; inset:0; z-index:-1; content:''; pointer-events:none; background-image:linear-gradient(color-mix(in srgb,var(--accent) 3%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--accent) 3%,transparent) 1px,transparent 1px); background-size:44px 44px; }
 

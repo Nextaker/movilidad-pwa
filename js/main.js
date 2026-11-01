@@ -64,6 +64,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMenuState = 'MAIN'; // 'MAIN' (5 tarjetas) o 'GARAGE' (3 tarjetas)
     let activeIndex = 0;
 
+    function loadCardImages(card) {
+        card.querySelectorAll('img[data-src]').forEach((image) => {
+            image.src = image.dataset.src;
+            image.removeAttribute('data-src');
+            image.loading = 'eager';
+        });
+    }
+
     // --- RENDERIZADO DEL CARRUSEL 3D HOLOGRÁFICO ---
     function renderCarousel() {
         const activeCards = currentMenuState === 'MAIN' ? mainCards : garageSubCards;
@@ -73,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (idx === activeIndex) {
                 card.classList.add('is-active');
+                loadCardImages(card);
             } else if (idx < activeIndex) {
                 card.classList.add('is-left');
             } else {
@@ -150,6 +159,55 @@ document.addEventListener('DOMContentLoaded', () => {
             renderCarousel();
         });
     });
+
+    let touchStart = null;
+    let suppressSwipeClickUntil = 0;
+
+    if (carousel) {
+        carousel.addEventListener('pointerdown', (event) => {
+            if (event.pointerType !== 'touch' || !event.isPrimary ||
+                !(event.target instanceof Element) ||
+                event.target.closest('button, a, input, select, textarea, [contenteditable="true"]')) {
+                touchStart = null;
+                return;
+            }
+
+            touchStart = {
+                pointerId: event.pointerId,
+                x: event.clientX,
+                y: event.clientY
+            };
+        });
+
+        window.addEventListener('pointerup', (event) => {
+            if (!touchStart || event.pointerId !== touchStart.pointerId) return;
+
+            const deltaX = event.clientX - touchStart.x;
+            const deltaY = event.clientY - touchStart.y;
+            touchStart = null;
+
+            if (Math.abs(deltaX) < 30 || Math.abs(deltaX) < Math.abs(deltaY) * 1.15) return;
+
+            const activeCards = currentMenuState === 'MAIN' ? mainCards : garageSubCards;
+            const nextIndex = activeIndex + (deltaX < 0 ? 1 : -1);
+            if (nextIndex < 0 || nextIndex >= activeCards.length) return;
+
+            activeIndex = nextIndex;
+            suppressSwipeClickUntil = Date.now() + 400;
+            renderCarousel();
+        });
+
+        window.addEventListener('pointercancel', (event) => {
+            if (touchStart?.pointerId === event.pointerId) touchStart = null;
+        });
+
+        carousel.addEventListener('click', (event) => {
+            if (Date.now() > suppressSwipeClickUntil || event.detail === 0) return;
+            suppressSwipeClickUntil = 0;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }, true);
+    }
 
     // Clic en las tarjetas del menú principal
     mainCards.forEach((card, idx) => {
@@ -236,8 +294,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.garage-car, .config-preview').forEach(preview => {
             const image = preview.querySelector('img');
             if (image) {
-                image.src = selectedCar.image;
                 image.alt = selectedCar.name;
+                const activePreview = preview.closest('.holo-card')?.classList.contains('is-active');
+                if (activePreview) {
+                    image.src = selectedCar.image;
+                    image.removeAttribute('data-src');
+                } else {
+                    image.dataset.src = selectedCar.image;
+                    image.removeAttribute('src');
+                }
             }
 
             const paintLayer = preview.querySelector('.paint-layer');
@@ -275,11 +340,18 @@ document.addEventListener('DOMContentLoaded', () => {
     applyVehicleGarage(savedCarKey, savedColor);
 
     // --- CONTROL DEL MAPA GPS ---
-    function abrirMapa() {
+    async function abrirMapa() {
         if (garageView) garageView.style.display = 'none';
         if (mapView) mapView.style.display = 'block';
-        mapService.initMap();
-        mapService.resize();
+        try {
+            await mapService.initMap();
+            mapService.resize();
+        } catch (error) {
+            console.error('No se pudo iniciar el mapa:', error);
+            if (mapView) mapView.style.display = 'none';
+            if (garageView) garageView.style.display = 'flex';
+            alert('No se pudo cargar el mapa. Comprueba tu conexión e inténtalo de nuevo.');
+        }
     }
 
     if (btnBackGarage) {

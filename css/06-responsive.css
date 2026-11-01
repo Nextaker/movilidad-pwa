@@ -53,4 +53,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   *,*::before,*::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; }
+  .gps-ring { animation:gps-pulse-reduced 2.4s ease-in-out infinite !important; }
 }
+
+@keyframes gps-pulse-reduced { 0%,100% { opacity:.2; } 50% { opacity:.8; } }

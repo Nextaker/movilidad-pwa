@@ -6,8 +6,6 @@
     <title>Overdrive — HUD V2</title>
     <link rel="manifest" href="./manifest.json">
     <link rel="stylesheet" href="style.css">
-    <!-- Leaflet CSS para el Mapa -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body class="theme-cyan">
 
@@ -284,7 +282,7 @@
                                 <button class="module-action" type="button" id="btn-enter-garage">ACCEDER AL TALLER ➔</button>
                             </div>
                             <div class="garage-car">
-                                <img src="./assets/garajes/garaje_palio_negro.jpg" alt="Fiat Palio 1.8">
+                                <img data-src="./assets/garajes/garaje_palio_negro.webp" alt="Fiat Palio 1.8" decoding="async">
                                 <div class="paint-layer paint-layer--obsidian"></div>
                                 <div class="car-scan"></div>
                                 <span class="car-tag">FIAT PALIO 1.8L</span>
@@ -416,7 +414,7 @@
                         <div class="corner corner--br"></div>
                         <div class="module module--config">
                             <div class="config-preview">
-                                <img id="style-card-preview-img" src="./assets/garajes/garaje_palio_negro.jpg" alt="Fiat Palio 1.8">
+                                <img id="style-card-preview-img" data-src="./assets/garajes/garaje_palio_negro.webp" alt="Fiat Palio 1.8" decoding="async">
                                 <div class="paint-layer paint-layer--obsidian"></div>
                                 <small>LIVE MATERIAL PREVIEW // FIAT PALIO</small>
                             </div>
@@ -631,7 +629,6 @@
     </div>
 
     <!-- Leaflet JS para el Mapa -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script type="module" src="./js/main.js"></script>
 </body>
 </html>
