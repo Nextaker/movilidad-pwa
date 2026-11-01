@@ -11,7 +11,7 @@
 </head>
 <body class="theme-cyan">
 
-    <!-- 1. PANTALLA DE ARRANQUE / BOOT SCREEN (RESTAURADA) -->
+    <!-- 1. PANTALLA DE ARRANQUE / BOOT SCREEN -->
     <div id="boot-screen" class="boot">
         <div class="scanlines"></div>
         <div class="boot__frame">
@@ -54,7 +54,6 @@
     <div id="map-view" style="display: none; width: 100vw; height: 100vh; position: relative; background: #050811; z-index: 999;">
         <div id="map" style="width: 100%; height: 100%;"></div>
         
-        <!-- Controles flotantes superiores con estilo HUD -->
         <div style="position: absolute; top: 20px; left: 70px; z-index: 1000; display: flex; gap: 10px;">
             <button id="btn-back-garage" class="ignition" style="width: auto; padding: 0 18px; min-height: 40px; cursor: pointer;">
                 [ ← VOLVER AL GARAJE ]
@@ -133,30 +132,94 @@
                     <!-- ========================================== -->
                     <!-- GRUPO 1: MENÚ PRINCIPAL (5 TARJETAS)       -->
                     <!-- ========================================== -->
+                    
+                    <!-- Tarjeta 01: Mapa HUD (Sincronizada con clases de 04-carousel_2.css) -->
                     <article class="holo-card is-active main-card" data-index="0" id="subcard-map">
                         <div class="card-rail">
-                            <span>CARD 01</span>
+                            <span>NAV_01</span>
                             <b>NAVIGATIONAL MATRIX</b>
-                            <i>GPS // 01</i>
+                            <i>MAPA HUD</i>
                         </div>
                         <div class="corner corner--tl"></div>
                         <div class="corner corner--br"></div>
                         <div class="module module--map">
-                            <div class="module-copy">
-                                <p class="eyebrow">SECTOR // PARAGUANÁ</p>
-                                <h2>MAPA <span>HUD</span></h2>
-                                <p>Navegación GPS en tiempo real, estaciones de servicio y puntos de control locales en Punto Fijo.</p>
-                                <button class="module-action" type="button" id="btn-open-map">ABRIR MAPA ➔</button>
-                            </div>
+                            
+                            <!-- Visual del Mapa con clases nativas de Figma -->
                             <div class="map-visual">
                                 <div class="map-grid"></div>
+                                
+                                <!-- Switcher de Capas (Clase nativa del CSS) -->
+                                <div class="layer-switcher">
+                                    <span>MAP_LAYER</span>
+                                    <div>
+                                        <button type="button" class="is-active">
+                                            <i class="layer-icon layer-icon--vector"></i> VECTOR
+                                        </button>
+                                        <button type="button">
+                                            <i class="layer-icon layer-icon--satellite"></i> SAT
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Marcador de Estación (Clase nativa del CSS) -->
+                                <div class="station-marker">
+                                    <div class="station-card">
+                                        <div class="station-card__rail">
+                                            <span>FUEL_NODE // E50</span>
+                                            <i>1.8 KM</i>
+                                        </div>
+                                        <strong>NEON FUEL STATION</strong>
+                                        <div class="station-status station-status--online">
+                                            <i></i><span>OPERATIONAL // 24H</span>
+                                        </div>
+                                        <div class="station-data">
+                                            <span><small>FUEL</small><b>E10 / 98</b></span>
+                                            <span><small>PRICE</small><b>1.68 €</b></span>
+                                        </div>
+                                    </div>
+                                    <div class="station-anchor"></div>
+                                    <div class="station-pin"><i></i></div>
+                                </div>
+
+                                <!-- Ubicación GPS y coordenadas nativas -->
+                                <div class="gps-location">
+                                    <div class="gps-ring gps-ring--one"></div>
+                                    <div class="gps-ring gps-ring--two"></div>
+                                    <div class="gps-ring gps-ring--three"></div>
+                                    <div class="gps-crosshair"><i></i></div>
+                                    <em>PILOT // LIVE</em>
+                                </div>
+
                                 <div class="route route--a"></div>
                                 <div class="map-node map-node--a"></div>
-                                <div class="map-target"><b>◎</b><span>PUNTO FIJO</span></div>
+                                <div class="map-coordinates">41.3874° N<br>02.1686° E</div>
+                            </div>
+
+                            <!-- Copia e Información inferior -->
+                            <div class="module-copy">
+                                <p class="eyebrow">LIVE NAVIGATION / SAT_12</p>
+                                <h2>MAPA <span>HUD</span></h2>
+                                <p>Encrypted city routing with fuel, charge and service nodes layered in real time.</p>
+                                
+                                <div class="stat-row">
+                                    <span>
+                                        <small>NEXT NODE</small>
+                                        <strong>1.8 KM</strong>
+                                    </span>
+                                    <span>
+                                        <small>ETA</small>
+                                        <strong>04:32</strong>
+                                    </span>
+                                </div>
+
+                                <button class="module-action" type="button" id="btn-open-map">
+                                    OPEN NAVIGATION ➔
+                                </button>
                             </div>
                         </div>
                     </article>
 
+                    <!-- Tarjeta 02: Música -->
                     <article class="holo-card is-right main-card" data-index="1" id="subcard-audio">
                         <div class="card-rail">
                             <span>CARD 02</span>
@@ -179,6 +242,7 @@
                         </div>
                     </article>
 
+                    <!-- Tarjeta 03: Favoritos -->
                     <article class="holo-card is-hidden main-card" data-index="2" id="subcard-favorites">
                         <div class="card-rail">
                             <span>CARD 03</span>
@@ -203,7 +267,7 @@
                         </div>
                     </article>
 
-                    <!-- Tarjeta 04: Disparador para entrar al Submenú de Garaje -->
+                    <!-- Tarjeta 04: Disparador Garaje -->
                     <article class="holo-card is-hidden main-card" data-index="3" id="subcard-garage-trigger">
                         <div class="card-rail">
                             <span>CARD 04</span>
@@ -228,6 +292,7 @@
                         </div>
                     </article>
 
+                    <!-- Tarjeta 05: Anuncios -->
                     <article class="holo-card is-hidden main-card" data-index="4" id="subcard-ads">
                         <div class="card-rail">
                             <span>CARD 05</span>
@@ -256,7 +321,8 @@
                     <!-- ========================================== -->
                     <!-- GRUPO 2: SUBMENÚ DE GARAJE (3 TARJETAS)    -->
                     <!-- ========================================== -->
-                  <!-- Tarjeta 01: Submenú de Garaje (Perfil del Piloto - ID_01) -->
+
+                    <!-- Subtarjeta 01: Perfil -->
                     <article class="holo-card is-hidden garage-sub-card" data-index="0" id="garage-sub-profile" style="display: none;">
                         <div class="card-rail">
                             <span>ID_01</span>
@@ -266,7 +332,6 @@
                         <div class="corner corner--tl"></div>
                         <div class="corner corner--br"></div>
                         <div class="module module--pilot">
-                            <!-- Lado Izquierdo: Anillo Cibernético con Huella -->
                             <div class="identity-core">
                                 <div class="identity-ring">
                                     <img src="./assets/componentes/7a5e6.svg" alt="Pilot icon">
@@ -274,7 +339,6 @@
                                 <span>ID_8F4A // VERIFIED</span>
                             </div>
 
-                            <!-- Lado Derecho: Identidad y Datos del Piloto (Estilo Figma) -->
                             <div class="module-copy">
                                 <p class="eyebrow">PILOT PROFILE // LVL.27</p>
                                 <h2 id="profile-card-name" style="font-size: clamp(22px, 2.5vw, 34px);">NIGHT//RUNNER</h2>
@@ -285,7 +349,7 @@
                                     <i>EDIT</i>
                                 </div>
 
-                                <div class="stat-row" style="margin-top: 15px;">
+                                <div class="stat-row">
                                     <span>
                                         <small>LICENSE</small>
                                         <strong>OD-X77-A</strong>
@@ -300,14 +364,14 @@
                                     </span>
                                 </div>
 
-                                <button class="module-action" type="button" id="btn-edit-profile" style="margin-top: 15px;">
+                                <button class="module-action" type="button" id="btn-edit-profile">
                                     EDITAR CREDENCIALES ➔
                                 </button>
                             </div>
                         </div>
                     </article>
 
-                  <!-- Tarjeta 02: Submenú de Garaje (Telemetría - VX_02) -->
+                    <!-- Subtarjeta 02: Telemetría -->
                     <article class="holo-card is-hidden garage-sub-card" data-index="1" id="garage-sub-telemetry" style="display: none;">
                         <div class="card-rail">
                             <span>VX_02</span>
@@ -327,21 +391,21 @@
                                 <p class="eyebrow">MI VEHÍCULO // TELEMETRÍA</p>
                                 <h2 id="card-vehicle-title" style="font-size: clamp(20px, 2.2vw, 29px);">PALIO R_99</h2>
                                 
-                                <div class="spec-grid" style="margin-top: 10px;">
+                                <div class="spec-grid">
                                     <span><small>ENGINE</small><strong id="card-spec-engine">1.8L / 16V</strong></span>
                                     <span><small>OIL TYPE</small><strong id="card-spec-oil">15W-40 SYN</strong></span>
                                     <span><small>ODOMETER</small><strong id="card-spec-odo">48,209 KM</strong></span>
                                     <span><small>NEXT SERVICE</small><strong id="card-spec-service">1,284 KM</strong></span>
                                 </div>
 
-                                <button class="module-action" type="button" id="btn-edit-vehicle" style="margin-top: 12px;">
+                                <button class="module-action" type="button" id="btn-edit-vehicle">
                                     CONFIGURAR FICHA ➔
                                 </button>
                             </div>
                         </div>
                     </article>
 
-                    <!-- Tarjeta 03: Submenú de Garaje (Estética y Estilo - CFG_03) -->
+                    <!-- Subtarjeta 03: Configuración / Estética -->
                     <article class="holo-card is-hidden garage-sub-card" data-index="2" id="garage-sub-style" style="display: none;">
                         <div class="card-rail">
                             <span>CFG_03</span>
@@ -391,9 +455,11 @@
                         </div>
                     </article>
 
-                <!-- Controles del Carrusel -->
+                </div>
+
+                <!-- CONTROLES DEL CARRUSEL (Por debajo del deck principal) -->
                 <div class="carousel-controls">
-                    <button type="button" id="carousel-prev">←</button>
+                    <button type="button" id="carousel-prev" aria-label="Anterior">←</button>
                     <div id="carousel-dots">
                         <button type="button" class="is-active" data-index="0"></button>
                         <button type="button" data-index="1"></button>
@@ -401,7 +467,7 @@
                         <button type="button" data-index="3"></button>
                         <button type="button" data-index="4"></button>
                     </div>
-                    <button type="button" id="carousel-next">→</button>
+                    <button type="button" id="carousel-next" aria-label="Siguiente">→</button>
                     <span>SWIPE / NAVIGATE</span>
                 </div>
             </section>
@@ -444,6 +510,7 @@
         </main>
     </div>
 
+    <!-- MODALES DE AUTENTICACIÓN Y CONFIGURACIÓN -->
     <div class="modal-overlay" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
         <section class="modal-content auth-cyber-card">
             <button class="modal-close cyber-btn" id="btn-auth-close" type="button" aria-label="Cerrar">×</button>
@@ -485,7 +552,6 @@
                     <button class="neon-btn full-width" id="auth-submit" type="submit">INICIALIZAR SISTEMA ➔</button>
                 </div>
                 
-                <!-- PIE DE TARJETA TÉCNICO (Figma Style) -->
                 <div class="auth-card-footer">
                     <span><img src="./assets/componentes/e5517.svg" alt="">256-BIT JWT ENCRYPTED</span>
                     <span>SUPABASE AUTH SECURED</span>
