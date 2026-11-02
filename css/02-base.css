@@ -11,7 +11,14 @@
 }
 
 * { box-sizing: border-box; }
-html, body, #root { min-width: 320px; min-height: 100%; margin: 0; background: var(--obsidian); }
+html, body, #root { 
+  width: 100vw;
+  height: 100vh;
+  margin: 0; 
+  overflow: hidden;
+  position: fixed;
+  background: var(--obsidian); 
+}
 button, input { color: inherit; font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-linecap: square; stroke-linejoin: miter; stroke-width: 1.7; }

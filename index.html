@@ -68,31 +68,31 @@
             <div class="hud__background"></div>
             <div class="scanlines"></div>
 
-            <!-- Barra Superior / Topbar -->
+          <!-- Barra Superior / Topbar (Paridad 1:1 Figma) -->
             <header class="topbar">
                 <div class="pilot-lockup">
                     <div class="avatar">
                         <img id="hud-avatar-img" src="./assets/componentes/7a5e6.svg" alt="Pilot Avatar">
                     </div>
                     <div>
-                        <span>PILOT CALL-SIGN</span>
+                        <span>PILOT // ACTIVE</span>
                         <strong id="auth-user-label">NIGHT//RUNNER</strong>
-                        <small>ID_8F4A // VERIFIED</small>
+                        <small>LEVEL 27 · ID VERIFIED</small>
                     </div>
                 </div>
 
                 <div class="vehicle-strip">
                     <div>
+                        <span>VEHICLE</span>
+                        <strong id="hud-vehicle-val">PALIO // R_99</strong>
+                    </div>
+                    <div>
                         <span>ODOMETER</span>
-                        <strong id="hud-mileage-val">48,209 <i>KM</i></strong>
+                        <strong id="hud-mileage-val">048,209 <i>KM</i></strong>
                     </div>
                     <div>
-                        <span>ENGINE</span>
-                        <strong class="nominal">NOMINAL</strong>
-                    </div>
-                    <div>
-                        <span>SERVICE</span>
-                        <strong id="hud-service-val">1,284 <i>KM</i></strong>
+                        <span>MOTOR LINK</span>
+                        <strong class="nominal" id="hud-motor-link">97.8%</strong>
                     </div>
                 </div>
 
@@ -111,7 +111,6 @@
                     </button>
                 </div>
             </header>
-
             <!-- Deck Central / Carrusel de Módulos -->
             <section class="command-deck" aria-label="Garage HUD carousel">
                 <div class="deck-heading">
