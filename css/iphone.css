@@ -1,0 +1,33 @@
+@media (max-width: 700px) and (orientation: portrait) {
+  .hud { height:auto; min-height:100dvh; overflow-y:auto; grid-template-rows:auto auto auto; }
+  .topbar { min-height:120px; padding:10px 14px; grid-template-columns:1fr auto; gap:8px 12px; }
+  .avatar { width:44px; height:44px; }.pilot-lockup strong { font-size:10px; }
+  .quick-actions { grid-column:2; grid-row:1; }.quick-actions button { width:38px; height:39px; }.quick-actions span { display:none; }
+  .vehicle-strip { grid-column:1/-1; grid-row:2; height:45px; }.vehicle-strip div { padding:0 9px; }.vehicle-strip strong { font-size:9px; }
+  .command-deck { min-height:635px; padding:14px 12px 10px; grid-template-rows:auto 535px auto; }
+  .deck-heading p { font-size:5px; }.deck-heading h1 { font-size:14px; }.deck-count b { font-size:18px; }
+  .carousel { min-height:0; }
+  .holo-card { width:calc(100vw - 24px); height:505px; min-height:0; }
+  .holo-card.is-left,.holo-card.is-right { opacity:0; pointer-events:none; }
+  .card-rail { top:12px; left:15px; right:15px; grid-template-columns:1fr auto; }.card-rail i { display:none; }
+  .module { padding:39px 20px 19px; }
+  .module--map,.module--music,.module--garage-entry,.module--pilot,.module--vehicle,.module--config,.module--list,.module--sponsors { grid-template-columns:1fr; grid-template-rows:245px 1fr; gap:15px; }
+  .module--list,.module--sponsors { grid-template-rows:auto 1fr; align-content:center; }
+  .module h2 { font-size:24px; }.module-copy > p:not(.eyebrow) { margin:7px 0; }
+  .map-visual,.album-frame,.garage-car,.config-preview { grid-row:1; }
+  .station-marker { left:48%; transform:scale(.86); transform-origin:top center; }
+  .gps-location { left:18%; top:58%; transform:scale(.9); }
+  .album-orbit { width:145px; }.module--music .module-copy { align-self:start; }
+  .favorite-list button { min-height:55px; }
+  .sponsor-grid div { min-height:82px; }.sponsor-grid b { font-size:16px; }
+  .identity-core { min-height:210px; }.identity-ring { width:165px; }.identity-core > span { bottom:5%; }
+  .engine-dial { min-height:190px; }.engine-dial::before { width:160px; }
+  .signal-bars { display:none; }
+  .config-panel { align-self:start; }.config-panel fieldset { margin-top:8px; }
+  .carousel-controls > span { display:none; }
+  .audio-zone { position:sticky; bottom:0; }
+  .audio-dock { min-height:58px; padding:7px 12px; grid-template-columns:42px 1fr 34px; gap:8px; }.track-code,.waveform,.timecode { display:none; }.marquee { border-right:0; }
+  .system-ticker { min-height:23px; padding-inline:12px; }.system-ticker span:not(:first-child),.system-ticker b { display:none; }
+  .play-button { width:36px; height:36px; }.play-button svg { width:15px; height:15px; margin-left:-5px; }.play-button .icon-pause,.play-button.is-playing .icon-play { display:none; }.play-button.is-playing .icon-pause { display:block; }
+  #btn-auth-open { margin-left:12px; }
+}
